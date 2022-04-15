@@ -1,0 +1,6 @@
+{
+    "tasks": {
+      "exec": "deno run --allow-read mod.ts",
+      "test": "deno test"
+    }
+  }

@@ -1,4 +1,4 @@
-import { assertObjectMatch } from "https://deno.land/std@0.125.0/testing/asserts.ts";
+import { assertObjectMatch } from "https://deno.land/std@0.141.0/testing/asserts.ts";
 import { scanner, TokenType } from "./scanner.ts";
 
 Deno.test("Two character tokens", () => {

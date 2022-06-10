@@ -1,5 +1,6 @@
 {
     "tasks": {
+      "debug": "deno run --allow-read mod.ts --debug",
       "exec": "deno run --allow-read mod.ts",
       "test": "deno test"
     }

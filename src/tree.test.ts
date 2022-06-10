@@ -8,7 +8,7 @@ import {
   assertEquals,
   assertObjectMatch,
 } from "https://deno.land/std@0.141.0/testing/asserts.ts";
-import Tree, { INode, IRootNode } from "./tree.ts";
+import { INode, IRootNode, Tree } from "./tree.ts";
 
 type Rec = Record<PropertyKey, unknown>;
 
@@ -86,6 +86,33 @@ describe("Tree", () => {
       assert(resultBfs[0].data.age === 100);
       assert(resultBfs[1].data.age === 25);
       assert(resultBfs[2].data.age === 2000);
+    });
+
+    it("should traverse all nodes", () => {
+      const root = tree.parse({ age: 8 });
+      const firstChild = root.addChild({ age: 100 });
+
+      root.addChild({ age: 25 });
+      firstChild.addChild({ age: 2000 });
+      const resultDfs: INode[] = [];
+
+      root.traverse((node) => {
+        resultDfs.push(node);
+      });
+
+      assert(resultDfs[0].data.age === 8);
+      assert(resultDfs[1].data.age === 100);
+      assert(resultDfs[2].data.age === 2000);
+
+      const resultBfs: INode[] = [];
+
+      root.traverse((node) => {
+        resultBfs.push(node);
+      }, Tree.STRATEGY.BREADTH);
+
+      assert(resultBfs[0].data.age === 8);
+      assert(resultBfs[1].data.age === 100);
+      assert(resultBfs[2].data.age === 25);
     });
   });
 

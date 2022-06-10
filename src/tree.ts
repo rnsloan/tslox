@@ -161,9 +161,7 @@ export class RootNode extends Node implements IRootNode {
         result.push(node);
       }
 
-      node.children.forEach((n) => {
-        findAllDfs(n);
-      });
+      node.children.forEach((n) => findAllDfs(n));
     };
 
     const findAllBfs = (node: Node) => {
@@ -188,9 +186,37 @@ export class RootNode extends Node implements IRootNode {
 
     return result;
   }
+
+  traverse(func: (n: Node) => unknown, strategy?: STRATEGY): void {
+    const traverseDfs = (node: Node) => {
+      func(node);
+
+      node.children.forEach((n) => traverseDfs(n));
+    };
+
+    const traverseBfs = (node: Node) => {
+      const queue = [node];
+
+      while (queue.length) {
+        const n = queue.shift();
+
+        if (n) {
+          func(n);
+        }
+
+        n?.children?.forEach((item) => queue.push(item));
+      }
+    };
+
+    if (strategy === STRATEGY.BREADTH) {
+      traverseBfs(this);
+    } else {
+      traverseDfs(this);
+    }
+  }
 }
 
-export default class Tree {
+export class Tree {
   static STRATEGY = STRATEGY;
 
   root: RootNode | null;

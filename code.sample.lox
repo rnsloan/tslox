@@ -1,0 +1,3 @@
+// deno-lint-ignore-file
+var hello = 12.45;
+var world;

@@ -1,13 +1,20 @@
 # Lox Interpreter
 
-An implementation of the Lox Tree-Walk Interpreter in TypeScript [http://craftinginterpreters.com/a-tree-walk-interpreter.html](http://craftinginterpreters.com/a-tree-walk-interpreter.html)
+A Tree-Walking Interpreter for the Lox programming language in TypeScript [http://craftinginterpreters.com/appendix-i.html](http://craftinginterpreters.com/appendix-i.html)
 
 
 ## Run 
 
-- put code into `code.lox`
-- `deno task exec`
+Create `code.lox` in the root of the project. See the `code.sample.lox` file.
+
+```
+var message = "Hello World!";
+print message;
+```
+
+run `deno task exec`
+
 
 ## Test
 
-- `deno test`
+`deno test`

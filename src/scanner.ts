@@ -67,7 +67,7 @@ const IDENTIFIERS: { [key: string]: TokenType } = {
   "while": TokenType.WHILE,
 };
 
-interface Token {
+export interface IToken {
   type: TokenType;
   lexeme: string | number;
   literal: string | number | null;
@@ -76,7 +76,7 @@ interface Token {
   end: number;
 }
 
-interface AddToken extends Partial<Token> {
+interface AddToken extends Partial<IToken> {
   type: TokenType;
 }
 
@@ -84,8 +84,8 @@ const isDigit = (c: string) => c?.match(/[0-9]/);
 const isAlpha = (c: string) => c?.match(/_|[a-z]/i);
 const isAlphaNumeric = (c: string) => isDigit(c) || isAlpha(c);
 
-export function scanner(input: string): Token[] {
-  const output: Token[] = [];
+export function scanner(input: string): IToken[] {
+  const output: IToken[] = [];
   const sep = input.split("");
   let position = 0;
   let line = 1;
@@ -137,8 +137,6 @@ export function scanner(input: string): Token[] {
 
   function number() {
     const start = position;
-
-    advance();
 
     while (isDigit(peek()) || peek() === ".") {
       advance();

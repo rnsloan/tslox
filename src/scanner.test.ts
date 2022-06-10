@@ -72,6 +72,15 @@ Deno.test("Numbers", () => {
     start: 0,
     end: 6,
   });
+
+  output = scanner('4 + 5');
+  assertObjectMatch(output[0], {
+    lexeme: "4",
+    literal: 4,
+    type: TokenType.NUMBER,
+    start: 0,
+    end: 0,
+  });
 });
 
 Deno.test("keywords", () => {

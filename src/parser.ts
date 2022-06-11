@@ -41,15 +41,19 @@ export function parser(code: IToken[]) {
     node = node ? node.addChild(data) : root.addChild(data);
   }
 
-  function advance(amount = 1) {
+  function advance(amount = 1): IToken {
     count = count + amount;
+    return code[count];
   }
 
   function peek() {
     return code[count + 1];
   }
 
-  function walk(token: IToken) {
+  function walk(): Record<PropertyKey, unknown> | void {
+    const token = code[count];
+
+    
     if (token.type === TokenType.CLASS) {
       // TODO
     }
@@ -57,6 +61,7 @@ export function parser(code: IToken[]) {
     if (token.type === TokenType.FUN) {
       // TODO
     }
+    
 
     if (token.type === TokenType.VAR) {
       const astNode: {
@@ -67,13 +72,11 @@ export function parser(code: IToken[]) {
         declarations: [],
       };
 
-      advance();
+      let current = advance();
 
-      if (code[count].type !== TokenType.IDENTIFIER) {
+      if (current.type !== TokenType.IDENTIFIER) {
         throw new Error(
-          `Identifier expected got ${code[count].type} {${code[count].line}:${
-            code[count].start
-          }}`,
+          `Identifier expected got ${current.type} {${current.line}:${current.start}}`,
         );
       }
 
@@ -81,42 +84,49 @@ export function parser(code: IToken[]) {
         type: ASTNodeType.VariableDeclarator,
         id: {
           type: ASTNodeType.Identifier,
-          name: code[count].lexeme,
+          name: current.lexeme,
         },
         init: null,
       };
 
       if (peek().type === TokenType.EQUAL) {
-        advance(2);
-        declarator.init = code[count].literal;
+        current = advance(2);
+        declarator.init = current.literal;
       }
 
       astNode.declarations.push(declarator);
-      addSibling(astNode);
 
-      while (code[count].type !== TokenType.SEMICOLON) {
-        advance();
+      while (current.type !== TokenType.SEMICOLON) {
+        current = advance();
       }
+
+      return astNode;
     }
 
+    /*
     if (token.type === TokenType.NUMBER) {
       addSibling({
         type: ASTNodeType.Literal,
         value: token.literal as number,
         raw: `${token.lexeme}`,
       });
-      /*
+
       while (peek().type === TokenType.NUMBER || peek().lexeme === ".") {
         advance();
         console.log('HELLO')
         value = `${value}${code[count].lexeme}`
       }
-      */
     }
+    */
   }
 
   while (count < code.length) {
-    walk(code[count]);
+    const astNode = walk();
+
+    if (astNode) {
+      root.addChild(astNode);
+    }
+
     advance();
   }
 

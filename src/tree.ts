@@ -187,7 +187,7 @@ export class RootNode extends Node implements IRootNode {
     return result;
   }
 
-  traverse(func: (n: Node) => unknown, strategy?: STRATEGY): void {
+  traverse(func: (n: Node) => void, strategy?: STRATEGY): void {
     const traverseDfs = (node: Node) => {
       func(node);
 

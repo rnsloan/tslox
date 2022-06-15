@@ -27,10 +27,6 @@ function match(token: IToken, comparison: TokenType | TokenType[]): boolean {
     : token.type === comparison;
 }
 
-function evalExpresion(): IASTNode | null {
-  return evalAssignment();
-}
-
 function advance(amount = 1): IToken {
   count = count + amount;
   return code[count];
@@ -38,6 +34,10 @@ function advance(amount = 1): IToken {
 
 function peek(amount = 1): IToken {
   return code[count + amount];
+}
+
+function evalExpresion(): IASTNode | null {
+  return evalAssignment();
 }
 
 function evalAssignment(): IASTNode | null {

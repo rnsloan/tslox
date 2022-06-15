@@ -15,6 +15,7 @@ export interface INode {
   hasChildren: () => boolean;
   drop: () => void;
   addChild: (data: Data) => Node;
+  addChildren: (data: Data[]) => Node[];
   addChildAtIndex: (data: Data, index: number) => Node;
   getPath: (node: Node) => Node[];
 }
@@ -66,6 +67,13 @@ class Node implements INode {
     const node = new Node(data, this);
     this.children.push(node);
     return node;
+  }
+
+  addChildren(data: Data[]) {
+    data.forEach((d) => {
+      this.addChild(d);
+    });
+    return this.children;
   }
 
   addChildAtIndex(data: Data, index: number) {

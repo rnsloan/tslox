@@ -17,6 +17,8 @@ describe("Tree", () => {
     a: { name: "john" },
     b: "Anisha",
     c: 13,
+    d: "d",
+    e: "e"
   };
   let tree: Tree;
 
@@ -136,6 +138,11 @@ describe("Tree", () => {
       root.addChildAtIndex(data, 0);
 
       assertEquals(root.children[0].data, data);
+    });
+
+    it("should add multiple children", () => {
+      child.addChildren([testData.d, testData.e])
+      assertEquals(child.children.length, 3);
     });
 
     it("should be a leaf", () => {

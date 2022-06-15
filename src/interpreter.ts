@@ -13,16 +13,19 @@ function codeGenerate(node: INode): string {
   const { type } = data;
 
   switch (type) {
-    case ASTNodeType.Program:
+    case ASTNodeType.Program: {
       code = node.children.map((n) => codeGenerate(n)).join("\n");
       break;
-    case ASTNodeType.VariableDeclaration:
+    }
+    case ASTNodeType.VariableDeclaration: {
       code = `var ${data.declarations[0].id.name} = ${
-        data.declarations[0].init
+        data.declarations[0].init.value
       };`;
       break;
-    default:
+    }
+    default: {
       throw new Error(`Unrecognised AST type ${type}`);
+    }
   }
 
   return code;

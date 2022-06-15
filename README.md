@@ -15,6 +15,11 @@ print message;
 run `deno task exec`
 
 
-## Test
+## Developement
 
-`deno test`
+`deno task debug`
+
+### Test
+
+- `deno task test`
+- `deno task update-snapshots`

@@ -1,0 +1,6 @@
+export const snapshot = {};
+
+snapshot[`Variables 1`] = `
+"var hello = 12.45;
+var world = null;"
+`;

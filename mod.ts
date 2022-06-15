@@ -6,6 +6,11 @@ const isDebugMode = Deno.args.includes("--debug");
 
 const code = await Deno.readTextFile("./code.lox");
 
+if (isDebugMode) {
+  console.log(code);
+  console.log("-------");
+}
+
 const tokens = scanner(code);
 
 if (isDebugMode) {

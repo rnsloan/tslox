@@ -1,6 +1,8 @@
 import { IToken, TokenType } from "./scanner.ts";
 import { INode, Tree } from "./tree.ts";
 
+// regex reference * = zero or more, ? = zero or one
+
 export enum ASTNodeType {
   Program = "Program",
   Literal = "Literal",
@@ -11,25 +13,113 @@ export enum ASTNodeType {
 
 interface IASTNode {
   type: ASTNodeType;
-  value?: number | string;
-  raw?: string;
+  value?: null | number | string | boolean;
+  raw?: null | number | string;
   init?: null | number | string;
 }
 
-/*
- * start with the lowest grammar rule (primary): http://craftinginterpreters.com/parsing-expressions.html
- * implement. then start to work in reverse implementing the other rules. Use the ast format
- * from https://astexplorer.net/
- * create the Interpreter stage evaluating the ast tree using the design here: https://github.com/jamiebuilds/the-super-tiny-compiler/blob/master/the-super-tiny-compiler.js
- *
-*/
+let code: IToken[];
+let count = 0;
 
-export function parser(code: IToken[]) {
+function match(token: IToken, comparison: TokenType | TokenType[]): boolean {
+  return Array.isArray(comparison)
+    ? comparison.includes(token.type)
+    : token.type === comparison;
+}
+
+function evalExpresion(): IASTNode | null {
+  return evalAssignment();
+}
+
+function advance(amount = 1): IToken {
+  count = count + amount;
+  return code[count];
+}
+
+function peek(amount = 1): IToken {
+  return code[count + amount];
+}
+
+function evalAssignment(): IASTNode | null {
+  return evalPrimary();
+}
+
+function evalPrimary(): IASTNode | null {
+  const token = code[count];
+
+  if (
+    match(token, [
+      TokenType.TRUE,
+      TokenType.FALSE,
+      TokenType.THIS,
+      TokenType.NUMBER,
+      TokenType.STRING,
+      TokenType.IDENTIFIER,
+      TokenType.SUPER,
+      TokenType.NIL,
+    ])
+  ) {
+    advance();
+
+    if (match(token, TokenType.NIL)) {
+      return {
+        type: ASTNodeType.Literal,
+        value: null,
+        raw: null,
+      };
+    }
+
+    return {
+      type: ASTNodeType.Literal,
+      value: token.literal as boolean | string | number,
+      raw: `${token.lexeme}`,
+    };
+  }
+
+  if (match(token, TokenType.LEFT_PAREN)) {
+    const codeSegment: IToken[] = [];
+    let i = count + 1;
+    let leftParensCount = 0;
+
+    while (!match(code[i], TokenType.RIGHT_PAREN) && leftParensCount === 0) {
+      if (match(code[i], TokenType.EOF)) {
+        throw new Error("Expected Right Parenthesis not found");
+      }
+
+      if (match(code[i], TokenType.LEFT_PAREN)) {
+        leftParensCount++;
+      }
+
+      if (match(code[i], TokenType.RIGHT_PAREN)) {
+        leftParensCount--;
+      }
+
+      codeSegment.push(code[i]);
+      i++;
+    }
+
+    // TODO - fix checkExpresion() to work with code segment
+    if (evalExpresion()) {
+      advance(i);
+
+      return {
+        type: ASTNodeType.Literal,
+        value: token.literal as boolean | string | number,
+        raw: `${token.lexeme}`,
+      };
+    }
+  }
+
+  return null;
+}
+
+export function parser(c: IToken[]) {
+  code = c;
   const tree = new Tree();
   const root = tree.parse({ type: "Program" });
   let node: null | INode;
-  let count = 0;
 
+  /*
   function addSibling(data: IASTNode) {
     if (node) {
       node.parent?.addChild(data);
@@ -40,30 +130,12 @@ export function parser(code: IToken[]) {
   function addChild(data: IASTNode) {
     node = node ? node.addChild(data) : root.addChild(data);
   }
-
-  function advance(amount = 1): IToken {
-    count = count + amount;
-    return code[count];
-  }
-
-  function peek() {
-    return code[count + 1];
-  }
+  */
 
   function walk(): Record<PropertyKey, unknown> | void {
-    const token = code[count];
+    let token = code[count];
 
-    
-    if (token.type === TokenType.CLASS) {
-      // TODO
-    }
-
-    if (token.type === TokenType.FUN) {
-      // TODO
-    }
-    
-
-    if (token.type === TokenType.VAR) {
+    if (match(token, TokenType.VAR)) {
       const astNode: {
         type: ASTNodeType;
         declarations: Record<PropertyKey, unknown>[];
@@ -72,11 +144,11 @@ export function parser(code: IToken[]) {
         declarations: [],
       };
 
-      let current = advance();
+      token = advance();
 
-      if (current.type !== TokenType.IDENTIFIER) {
+      if (!match(token, TokenType.IDENTIFIER)) {
         throw new Error(
-          `Identifier expected got ${current.type} {${current.line}:${current.start}}`,
+          `Identifier expected got ${token.type} {${token.line}:${token.start}}`,
         );
       }
 
@@ -84,43 +156,34 @@ export function parser(code: IToken[]) {
         type: ASTNodeType.VariableDeclarator,
         id: {
           type: ASTNodeType.Identifier,
-          name: current.lexeme,
+          name: token.lexeme,
         },
-        init: null,
+        init: {
+          type: ASTNodeType.Literal,
+          value: null,
+          raw: null,
+        },
       };
 
-      if (peek().type === TokenType.EQUAL) {
-        current = advance(2);
-        declarator.init = current.literal;
+      if (match(peek(), TokenType.EQUAL)) {
+        token = advance(2);
+        const val = evalExpresion();
+        if (val) {
+          declarator.init = val;
+        } else {
+          throw new Error(
+            `Unable to parse variable value {${token.line}:${token.start}}`,
+          );
+        }
       }
 
       astNode.declarations.push(declarator);
 
-      while (current.type !== TokenType.SEMICOLON) {
-        current = advance();
-      }
-
       return astNode;
     }
-
-    /*
-    if (token.type === TokenType.NUMBER) {
-      addSibling({
-        type: ASTNodeType.Literal,
-        value: token.literal as number,
-        raw: `${token.lexeme}`,
-      });
-
-      while (peek().type === TokenType.NUMBER || peek().lexeme === ".") {
-        advance();
-        console.log('HELLO')
-        value = `${value}${code[count].lexeme}`
-      }
-    }
-    */
   }
 
-  while (count < code.length) {
+  while (count < c.length) {
     const astNode = walk();
 
     if (astNode) {

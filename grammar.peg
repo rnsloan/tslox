@@ -1,3 +1,5 @@
+// regex reference * = zero or more, ? = zero or one
+
 program        → declaration* EOF ;
 
 

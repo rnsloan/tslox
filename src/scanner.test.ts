@@ -94,12 +94,21 @@ Deno.test("keywords", () => {
 });
 
 Deno.test("identifers", () => {
-  const output = scanner(`var foo = "hello world"`);
+  let output = scanner(`var foo = "hello world"`);
   assertObjectMatch(output[1], {
     lexeme: "foo",
     type: TokenType.IDENTIFIER,
     start: 4,
     end: 6,
+  });
+
+  output = scanner(`var foo = false`);
+  assertObjectMatch(output[3], {
+    lexeme: "false",
+    literal: false,
+    type: TokenType.FALSE,
+    start: 10,
+    end: 14,
   });
 });
 

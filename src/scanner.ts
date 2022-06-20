@@ -70,7 +70,7 @@ const IDENTIFIERS: { [key: string]: TokenType } = {
 export interface IToken {
   type: TokenType;
   lexeme: string | number;
-  literal: string | number | null;
+  literal: string | number | boolean | null;
   line: number;
   start: number;
   end: number;
@@ -165,14 +165,24 @@ export function scanner(input: string): IToken[] {
     const end = position;
     const value = input.slice(start, end + 1);
     let tokenType = TokenType.IDENTIFIER;
+    let literal;
 
     if (IDENTIFIERS[value]) {
       tokenType = IDENTIFIERS[value];
     }
 
+    if (tokenType === TokenType.TRUE) {
+      literal = true;
+    }
+
+    if (tokenType === TokenType.FALSE) {
+      literal = false;
+    }
+
     addToken({
       type: tokenType,
       lexeme: value,
+      literal,
       start: start,
       end: end,
     });
@@ -185,7 +195,7 @@ export function scanner(input: string): IToken[] {
         addToken({ type: TokenType.LEFT_PAREN });
         break;
       case ")":
-        output.push();
+        addToken({ type: TokenType.RIGHT_PAREN });
         break;
       case "{":
         addToken({ type: TokenType.LEFT_BRACE });

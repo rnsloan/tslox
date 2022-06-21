@@ -15,6 +15,7 @@ var foo = bar;
 var baz = 'hello world';
 var alpha = 5454.454;
 var beta = null;
+var gamma = nil;
 `;
   await assertSnapshot(t, test(code));
 

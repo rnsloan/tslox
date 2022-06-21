@@ -1,25 +1,55 @@
 import { IToken, TokenType } from "./scanner.ts";
 import { INode, Tree } from "./tree.ts";
 
-// regex reference * = zero or more, ? = zero or one
-
 export enum ASTNodeType {
   Program = "Program",
   Literal = "Literal",
   VariableDeclaration = "VariableDeclaration",
   VariableDeclarator = "VariableDeclarator",
   Identifier = "Identifier",
+  CallExpression = "CallExpression",
+}
+export interface IProgram {
+  type: ASTNodeType.Program;
+  body: ASTNode[];
+}
+interface ILiteral {
+  type: ASTNodeType.Literal;
+  value: null | number | string | boolean;
+  raw: null | number | string;
+}
+interface IIdentifier {
+  type: ASTNodeType.Identifier;
+  name: string;
+}
+interface ICallExpression {
+  type: ASTNodeType.CallExpression;
+  callee: IIdentifier;
+  arguments?: ASTNode[];
+}
+interface IDeclarator {
+  type: ASTNodeType.VariableDeclarator;
+  id: {
+    type: ASTNodeType;
+    name: string | number;
+  };
+  init: ASTNode;
+}
+interface IVariableDeclaration {
+  type: ASTNodeType.VariableDeclaration;
+  declarations: IDeclarator[];
 }
 
-interface IASTNode {
-  type: ASTNodeType;
-  value?: null | number | string | boolean;
-  raw?: null | number | string;
-  init?: null | number | string;
-}
+export type ASTNode =
+  | IProgram
+  | ILiteral
+  | IIdentifier
+  | ICallExpression
+  | IDeclarator
+  | IVariableDeclaration;
 
 let code: IToken[];
-let count = 0;
+let position = 0;
 
 function match(token: IToken, comparison: TokenType | TokenType[]): boolean {
   return Array.isArray(comparison)
@@ -28,24 +58,100 @@ function match(token: IToken, comparison: TokenType | TokenType[]): boolean {
 }
 
 function advance(amount = 1): IToken {
-  count = count + amount;
-  return code[count];
+  position = position + amount;
+  return code[position];
 }
 
 function peek(amount = 1): IToken {
-  return code[count + amount];
+  return code[position + amount];
 }
 
-function evalExpresion(): IASTNode | null {
+function evalStatement(): ASTNode | null {
+  return evalExpresion();
+}
+
+function evalExpresion(): ASTNode | null {
   return evalAssignment();
 }
 
-function evalAssignment(): IASTNode | null {
-  return evalPrimary();
+function evalAssignment(): ASTNode | null {
+  // TODO: Implement ( call "." )? IDENTIFIER "=" assignment
+  //const primary = evalPrimary();
+  return evalLogicOr();
 }
 
-function evalPrimary(): IASTNode | null {
-  const token = code[count];
+// TODO complete implementations
+function evalLogicOr(): ASTNode | null {
+  return evalEquality();
+}
+
+function evalEquality(): ASTNode | null {
+  return evalComparison();
+}
+
+function evalComparison(): ASTNode | null {
+  return evalTerm();
+}
+
+function evalTerm(): ASTNode | null {
+  return evalFactor();
+}
+
+function evalFactor(): ASTNode | null {
+  return evalUnary();
+}
+
+function evalUnary(): ASTNode | null {
+  return evalCall();
+}
+
+function evalCall(): ILiteral | IIdentifier | ICallExpression | null {
+  // TODO: primary "." IDENTIFIER
+  const primary = evalPrimary();
+  if (!primary) {
+    return null;
+  }
+
+  if (
+    primary.type === ASTNodeType.Identifier &&
+    peek().type === TokenType.LEFT_PAREN
+  ) {
+    const callExpression: ICallExpression = {
+      type: ASTNodeType.CallExpression,
+      callee: primary,
+    };
+    const args: ASTNode[] = [];
+
+    // skip "("
+    advance();
+
+    while (code[position] && !match(code[position], TokenType.RIGHT_PAREN)) {
+      if (match(code[position], [TokenType.COMMA, TokenType.LEFT_PAREN])) {
+        advance();
+        continue;
+      }
+
+      const primary = evalPrimary();
+
+      if (primary) {
+        args.push(primary);
+      } else {
+        advance();
+      }
+    }
+
+    if (args.length) {
+      callExpression.arguments = args;
+    }
+
+    return callExpression;
+  }
+
+  return primary;
+}
+
+function evalPrimary(): ILiteral | IIdentifier | null {
+  const token = code[position];
 
   if (
     match(token, [
@@ -69,6 +175,13 @@ function evalPrimary(): IASTNode | null {
       };
     }
 
+    if (match(token, TokenType.IDENTIFIER)) {
+      return {
+        type: ASTNodeType.Identifier,
+        name: token.lexeme as string,
+      };
+    }
+
     return {
       type: ASTNodeType.Literal,
       value: token.literal as boolean | string | number,
@@ -78,7 +191,7 @@ function evalPrimary(): IASTNode | null {
 
   if (match(token, TokenType.LEFT_PAREN)) {
     const codeSegment: IToken[] = [];
-    let i = count + 1;
+    let i = position + 1;
     let leftParensCount = 0;
 
     while (!match(code[i], TokenType.RIGHT_PAREN) && leftParensCount === 0) {
@@ -132,14 +245,11 @@ export function parser(c: IToken[]) {
   }
   */
 
-  function walk(): Record<PropertyKey, unknown> | void {
-    let token = code[count];
+  function walk(): ASTNode | null {
+    let token = code[position];
 
     if (match(token, TokenType.VAR)) {
-      const astNode: {
-        type: ASTNodeType;
-        declarations: Record<PropertyKey, unknown>[];
-      } = {
+      const astNode: IVariableDeclaration = {
         type: ASTNodeType.VariableDeclaration,
         declarations: [],
       };
@@ -152,7 +262,7 @@ export function parser(c: IToken[]) {
         );
       }
 
-      const declarator: Record<PropertyKey, unknown> = {
+      const declarator: IDeclarator = {
         type: ASTNodeType.VariableDeclarator,
         id: {
           type: ASTNodeType.Identifier,
@@ -181,9 +291,11 @@ export function parser(c: IToken[]) {
 
       return astNode;
     }
+
+    return evalStatement();
   }
 
-  while (count < c.length) {
+  while (position < c.length) {
     const astNode = walk();
 
     if (astNode) {

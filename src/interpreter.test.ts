@@ -26,6 +26,38 @@ Deno.test("Variables", async (t) => {
   }]);
 
   const result = interpreter(tree);
-  
   await assertSnapshot(t, result);
 });
+
+Deno.test("Functions", async (t) => {
+  const tree = new Tree();
+  const root = tree.parse({ type: "Program" });
+  root.addChildren([
+    {
+      type: "CallExpression",
+      callee: { type: "Identifier", name: "foo" },
+      arguments: [{ type: "Literal", value: true, raw: "true" }],
+    },
+    {
+      type: "VariableDeclaration",
+      declarations: [
+        {
+          type: "VariableDeclarator",
+          id: { type: "Identifier", name: "foo" },
+          init: {
+            type: "CallExpression",
+            callee: { type: "Identifier", name: "hello" },
+            arguments: [
+              { type: "Literal", value: 34, raw: "34" },
+              { type: "Literal", value: null, raw: "world" },
+            ],
+          },
+        },
+      ],
+    },
+  ]);
+  const result = interpreter(tree);
+  await assertSnapshot(t, result);
+});
+
+// varible = null test

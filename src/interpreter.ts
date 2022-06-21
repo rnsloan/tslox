@@ -45,7 +45,7 @@ function generateCode(node: ASTNode): string {
       if (node.arguments) {
         args = node.arguments.map((arg) => generateCode(arg)).join(",");
       }
-      code = `${node.callee.name}(${args})`;
+      code = `${node.callee.name}(${args});`;
       break;
     }
     default: {

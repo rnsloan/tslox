@@ -6,6 +6,6 @@ var world = null;"
 `;
 
 snapshot[`Functions 1`] = `
-'foo(true)
-var foo = hello(34,"world");'
+'foo(true);
+var foo = hello(34,"world");;'
 `;

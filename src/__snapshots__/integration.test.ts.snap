@@ -1,0 +1,10 @@
+export const snapshot = {};
+
+snapshot[`Integration 1`] = `
+'var foo = bar;
+var baz = "hello world";
+var alpha = 5454.454;
+var beta = null;'
+`;
+
+snapshot[`Integration 2`] = `""`;

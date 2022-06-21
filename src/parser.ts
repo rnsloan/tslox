@@ -114,7 +114,7 @@ function evalCall(): ILiteral | IIdentifier | ICallExpression | null {
 
   if (
     primary.type === ASTNodeType.Identifier &&
-    peek().type === TokenType.LEFT_PAREN
+    code[position].type === TokenType.LEFT_PAREN
   ) {
     const callExpression: ICallExpression = {
       type: ASTNodeType.CallExpression,

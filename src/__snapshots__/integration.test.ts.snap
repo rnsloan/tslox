@@ -8,4 +8,14 @@ var beta = null;
 var gamma = null;'
 `;
 
-snapshot[`Integration 2`] = `""`;
+snapshot[`Integration 2`] = `
+'foo(true);
+bar();
+var foo = hello(34,"world");'
+`;
+
+snapshot[`Integration 3`] = `
+"var foo = -5;
+var bar = !false;
+var baz = !!true;"
+`;

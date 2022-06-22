@@ -24,6 +24,10 @@ function generateCode(node: ASTNode): string {
       code = `var ${node.declarations[0].id.name} = ${
         generateCode(node.declarations[0].init)
       };`;
+
+      if (code.endsWith(";;")) {
+        code = code.substring(0, code.length - 1);
+      }
       break;
     }
     case ASTNodeType.Identifier: {
@@ -31,7 +35,7 @@ function generateCode(node: ASTNode): string {
       break;
     }
     case ASTNodeType.Literal: {
-      if (node.value) {
+      if (node.value || node.value === false) {
         code = `${node.value}`;
       } else if (node.raw === null) {
         code = "null";
@@ -46,6 +50,13 @@ function generateCode(node: ASTNode): string {
         args = node.arguments.map((arg) => generateCode(arg)).join(",");
       }
       code = `${node.callee.name}(${args});`;
+      break;
+    }
+    case ASTNodeType.UnaryExpression: {
+      code = node.operator;
+      if (node.argument) {
+        code += generateCode(node.argument);
+      }
       break;
     }
     default: {

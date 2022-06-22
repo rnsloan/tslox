@@ -1,13 +1,15 @@
 import { IToken, TokenType } from "./scanner.ts";
-import { INode, Tree } from "./tree.ts";
+import { Tree } from "./tree.ts";
 
 export enum ASTNodeType {
   Program = "Program",
   Literal = "Literal",
   VariableDeclaration = "VariableDeclaration",
   VariableDeclarator = "VariableDeclarator",
-  Identifier = "Identifier",
+  UnaryExpression = "UnaryExpression",
   CallExpression = "CallExpression",
+  MemberExpression = "MemberExpression",
+  Identifier = "Identifier",
 }
 export interface IProgram {
   type: ASTNodeType.Program;
@@ -22,10 +24,21 @@ interface IIdentifier {
   type: ASTNodeType.Identifier;
   name: string;
 }
+interface IUnaryExpression {
+  type: ASTNodeType.UnaryExpression;
+  operator: string;
+  prefix: boolean;
+  argument: ASTNode;
+}
 interface ICallExpression {
   type: ASTNodeType.CallExpression;
   callee: IIdentifier;
   arguments?: ASTNode[];
+}
+interface IMemberExpression {
+  type: ASTNodeType.MemberExpression;
+  object: ILiteral;
+  property: IIdentifier;
 }
 interface IDeclarator {
   type: ASTNodeType.VariableDeclarator;
@@ -42,11 +55,13 @@ interface IVariableDeclaration {
 
 export type ASTNode =
   | IProgram
-  | ILiteral
-  | IIdentifier
-  | ICallExpression
   | IDeclarator
-  | IVariableDeclaration;
+  | IVariableDeclaration
+  | IUnaryExpression
+  | ICallExpression
+  | IMemberExpression
+  | ILiteral
+  | IIdentifier;
 
 let code: IToken[];
 let position = 0;
@@ -102,19 +117,42 @@ function evalFactor(): ASTNode | null {
 }
 
 function evalUnary(): ASTNode | null {
+  if (
+    match(code[position], [
+      TokenType.MINUS,
+      TokenType.BANG,
+    ])
+  ) {
+    const unaryToken = code[position];
+
+    advance();
+
+    const unary: IUnaryExpression = {
+      type: ASTNodeType.UnaryExpression,
+      operator: match(unaryToken, [
+          TokenType.MINUS,
+        ])
+        ? "-"
+        : "!",
+      prefix: true,
+      argument: evalUnary() as ASTNode,
+    };
+
+    return unary;
+  }
   return evalCall();
 }
 
 function evalCall(): ILiteral | IIdentifier | ICallExpression | null {
   // TODO: primary "." IDENTIFIER
   const primary = evalPrimary();
-  if (!primary) {
+  if (primary === null) {
     return null;
   }
 
   if (
     primary.type === ASTNodeType.Identifier &&
-    code[position].type === TokenType.LEFT_PAREN
+    match(code[position], TokenType.LEFT_PAREN)
   ) {
     const callExpression: ICallExpression = {
       type: ASTNodeType.CallExpression,
@@ -122,11 +160,8 @@ function evalCall(): ILiteral | IIdentifier | ICallExpression | null {
     };
     const args: ASTNode[] = [];
 
-    // skip "("
-    advance();
-
     while (code[position] && !match(code[position], TokenType.RIGHT_PAREN)) {
-      if (match(code[position], [TokenType.COMMA, TokenType.LEFT_PAREN])) {
+      if (match(code[position], [TokenType.LEFT_PAREN, TokenType.COMMA])) {
         advance();
         continue;
       }
@@ -143,6 +178,9 @@ function evalCall(): ILiteral | IIdentifier | ICallExpression | null {
     if (args.length) {
       callExpression.arguments = args;
     }
+
+    // skip ")"
+    advance();
 
     return callExpression;
   }
@@ -189,6 +227,7 @@ function evalPrimary(): ILiteral | IIdentifier | null {
     };
   }
 
+  /*
   if (match(token, TokenType.LEFT_PAREN)) {
     const codeSegment: IToken[] = [];
     let i = position + 1;
@@ -222,15 +261,15 @@ function evalPrimary(): ILiteral | IIdentifier | null {
       };
     }
   }
-
+  */
   return null;
 }
 
 export function parser(c: IToken[]) {
   code = c;
+  position = 0;
   const tree = new Tree();
   const root = tree.parse({ type: "Program" });
-  let node: null | INode;
 
   /*
   function addSibling(data: IASTNode) {
@@ -247,6 +286,11 @@ export function parser(c: IToken[]) {
 
   function walk(): ASTNode | null {
     let token = code[position];
+
+    if (match(token, TokenType.SEMICOLON)) {
+      advance();
+      return null;
+    }
 
     if (match(token, TokenType.VAR)) {
       const astNode: IVariableDeclaration = {
@@ -295,14 +339,13 @@ export function parser(c: IToken[]) {
     return evalStatement();
   }
 
-  while (position < c.length) {
+  // walk() function advances position value
+  while (position < c.length - 1) {
     const astNode = walk();
 
     if (astNode) {
       root.addChild(astNode);
     }
-
-    advance();
   }
 
   return tree;

@@ -25,4 +25,11 @@ bar();
 var foo = hello(34,"world");
 `;
   await assertSnapshot(t, test(code2));
+
+  const code3 = `
+var foo = -5;
+var bar = !false
+var baz = !!true
+`;
+  await assertSnapshot(t, test(code3));
 });

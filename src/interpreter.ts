@@ -30,6 +30,21 @@ function generateCode(node: ASTNode): string {
       }
       break;
     }
+    case ASTNodeType.UnaryExpression: {
+      code = node.operator;
+      if (node.argument) {
+        code += generateCode(node.argument);
+      }
+      break;
+    }    
+    case ASTNodeType.CallExpression: {
+      let args = "";
+      if (node.arguments) {
+        args = node.arguments.map((arg) => generateCode(arg)).join(",");
+      }
+      code = `${node.callee.name}(${args});`;
+      break;
+    }    
     case ASTNodeType.Identifier: {
       code = node.name;
       break;
@@ -41,21 +56,6 @@ function generateCode(node: ASTNode): string {
         code = "null";
       } else {
         code = `"${node.raw}"`;
-      }
-      break;
-    }
-    case ASTNodeType.CallExpression: {
-      let args = "";
-      if (node.arguments) {
-        args = node.arguments.map((arg) => generateCode(arg)).join(",");
-      }
-      code = `${node.callee.name}(${args});`;
-      break;
-    }
-    case ASTNodeType.UnaryExpression: {
-      code = node.operator;
-      if (node.argument) {
-        code += generateCode(node.argument);
       }
       break;
     }

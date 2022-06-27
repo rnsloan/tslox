@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import {
   beforeEach,
   describe,
@@ -19,8 +20,8 @@ describe("Tree", () => {
     c: 13,
     d: "d",
     e: "e"
-  };
-  let tree: Tree;
+  };  
+  let tree: Tree<any>;
 
   describe("Root Node", () => {
     beforeEach(() => {
@@ -96,7 +97,7 @@ describe("Tree", () => {
 
       root.addChild({ age: 25 });
       firstChild.addChild({ age: 2000 });
-      const resultDfs: INode[] = [];
+      const resultDfs: INode<Record<'age', number>>[] = [];
 
       root.traverse((node) => {
         resultDfs.push(node);
@@ -106,7 +107,7 @@ describe("Tree", () => {
       assert(resultDfs[1].data.age === 100);
       assert(resultDfs[2].data.age === 2000);
 
-      const resultBfs: INode[] = [];
+      const resultBfs: INode<Record<'age', number>>[] = [];
 
       root.traverse((node) => {
         resultBfs.push(node);
@@ -119,8 +120,8 @@ describe("Tree", () => {
   });
 
   describe("Node", () => {
-    let root: IRootNode;
-    let child: INode;
+    let root: IRootNode<any>;
+    let child: INode<any>;
 
     beforeEach(() => {
       tree = new Tree();

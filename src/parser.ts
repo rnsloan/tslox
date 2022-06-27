@@ -113,6 +113,8 @@ function evalTerm(): ASTNode | null {
 }
 
 function evalFactor(): ASTNode | null {
+  // TODO implement factor
+  // need to handle expression "(" expression ")"
   return evalUnary();
 }
 

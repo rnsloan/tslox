@@ -1,12 +1,13 @@
 import { assertSnapshot } from "https://deno.land/std@0.143.0/testing/snapshot.ts";
 import { scanner } from "./scanner.ts";
-import { parser } from "./parser.ts";
+import { parser, ASTNode } from "./parser.ts";
 import { interpreter } from "./interpreter.ts";
+import { Tree } from './tree.ts';
 
 function test(code: string) {
   const tokens = scanner(code);
   const ast = parser(tokens);
-  return interpreter(ast);
+  return interpreter(ast as Tree<ASTNode>);
 }
 
 Deno.test("Integration", async (t) => {

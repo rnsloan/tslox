@@ -1,32 +1,29 @@
-// deno-lint-ignore no-explicit-any
-type Data = any;
-
 enum STRATEGY {
   DEPTH,
   BREADTH,
 }
 
-export interface INode {
-  parent: Node | null;
-  children: Node[];
-  data: Data;
+export interface INode<T> {
+  parent: Node<T> | null;
+  children: Node<T>[];
+  data: T;
   isRoot: () => boolean;
   isLeaf: () => boolean;
   hasChildren: () => boolean;
   drop: () => void;
-  addChild: (data: Data) => Node;
-  addChildren: (data: Data[]) => Node[];
-  addChildAtIndex: (data: Data, index: number) => Node;
-  getPath: (node: Node) => Node[];
+  addChild: (data: T) => Node<T>;
+  addChildren: (data: T[]) => Node<T>[];
+  addChildAtIndex: (data: T, index: number) => Node<T>;
+  getPath: (node: Node<T>) => Node<T>[];
 }
 
-class Node implements INode {
+class Node<T> implements INode<T> {
   protected id: string;
-  readonly parent: Node | null;
-  readonly children: Node[];
-  readonly data: Data;
+  readonly parent: Node<T> | null;
+  readonly children: Node<T>[];
+  readonly data: T;
 
-  constructor(data: Data, parent?: Node) {
+  constructor(data: T, parent?: Node<T>) {
     this.id = crypto.randomUUID();
     this.parent = parent || null;
     this.data = data;
@@ -45,7 +42,7 @@ class Node implements INode {
     return Boolean(this.children.length);
   }
 
-  drop(): Node | undefined {
+  drop(): Node<T> | undefined {
     if (this.isRoot()) {
       console.warn("Cannot drop the Root Node");
       return;
@@ -63,20 +60,20 @@ class Node implements INode {
     console.error("Unable to drop Node");
   }
 
-  addChild(data: Data) {
+  addChild(data: T): Node<T> {
     const node = new Node(data, this);
     this.children.push(node);
     return node;
   }
 
-  addChildren(data: Data[]) {
+  addChildren(data: T[]) {
     data.forEach((d) => {
       this.addChild(d);
     });
     return this.children;
   }
 
-  addChildAtIndex(data: Data, index: number) {
+  addChildAtIndex(data: T, index: number): Node<T> {
     const node = new Node(data, this);
     this.children.splice(index, 0, node);
     return node;
@@ -84,13 +81,13 @@ class Node implements INode {
 
   getPath() {
     interface AddParent {
-      (n: Node): AddParent;
+      (n: Node<T>): AddParent;
     }
 
     const path = [];
     path.push(this);
 
-    const addParent = (n: Node): AddParent | undefined => {
+    const addParent = (n: Node<T>): AddParent | undefined => {
       const { parent } = n;
 
       if (parent) {
@@ -104,16 +101,16 @@ class Node implements INode {
   }
 }
 
-export interface IRootNode extends INode {
+export interface IRootNode<T> extends INode<T> {
   find: (
-    predicate: (n: Node) => boolean,
+    predicate: (n: Node<T>) => boolean,
     strategy?: STRATEGY,
-  ) => Node | undefined;
-  findAll: (predicate: (n: Node) => boolean, strategy?: STRATEGY) => Node[];
+  ) => Node<T> | undefined;
+  findAll: (predicate: (n: Node<T>) => boolean, strategy?: STRATEGY) => Node<T>[];
 }
 
-export class RootNode extends Node implements IRootNode {
-  constructor(data: Data) {
+export class RootNode<T> extends Node<T> implements IRootNode<T> {
+  constructor(data: T) {
     super(data);
     this.id = `root-${crypto.randomUUID()}`;
   }
@@ -126,10 +123,10 @@ export class RootNode extends Node implements IRootNode {
     return false;
   }
 
-  find(predicate: (n: Node) => boolean, strategy?: STRATEGY): Node | undefined {
-    let result: Node | undefined;
+  find(predicate: (n: Node<T>) => boolean, strategy?: STRATEGY): Node<T> | undefined {
+    let result: Node<T> | undefined;
 
-    const findDfs = (node: Node) => {
+    const findDfs = (node: Node<T>) => {
       if (predicate(node) && !result) {
         result = node;
         return;
@@ -139,7 +136,7 @@ export class RootNode extends Node implements IRootNode {
         findDfs(node.children[i]);
       }
     };
-    const findBfs = (node: Node) => {
+    const findBfs = (node: Node<T>) => {
       const queue = [node];
 
       while (queue.length && !result) {
@@ -162,9 +159,9 @@ export class RootNode extends Node implements IRootNode {
     return result;
   }
 
-  findAll(predicate: (n: Node) => boolean, strategy?: STRATEGY): Node[] {
-    const result: Node[] = [];
-    const findAllDfs = (node: Node) => {
+  findAll(predicate: (n: Node<T>) => boolean, strategy?: STRATEGY): Node<T>[] {
+    const result: Node<T>[] = [];
+    const findAllDfs = (node: Node<T>) => {
       if (predicate(node)) {
         result.push(node);
       }
@@ -172,7 +169,7 @@ export class RootNode extends Node implements IRootNode {
       node.children.forEach((n) => findAllDfs(n));
     };
 
-    const findAllBfs = (node: Node) => {
+    const findAllBfs = (node: Node<T>) => {
       const queue = [node];
 
       while (queue.length) {
@@ -195,14 +192,14 @@ export class RootNode extends Node implements IRootNode {
     return result;
   }
 
-  traverse(func: (n: Node) => void, strategy?: STRATEGY): void {
-    const traverseDfs = (node: Node) => {
+  traverse(func: (n: Node<T>) => void, strategy?: STRATEGY): void {
+    const traverseDfs = (node: Node<T>) => {
       func(node);
 
       node.children.forEach((n) => traverseDfs(n));
     };
 
-    const traverseBfs = (node: Node) => {
+    const traverseBfs = (node: Node<T>) => {
       const queue = [node];
 
       while (queue.length) {
@@ -224,16 +221,16 @@ export class RootNode extends Node implements IRootNode {
   }
 }
 
-export class Tree {
+export class Tree<T> {
   static STRATEGY = STRATEGY;
 
-  root: RootNode | null;
+  root: RootNode<T> | null;
 
   constructor() {
     this.root = null;
   }
 
-  parse(data: Data) {
+  parse(data: T) {
     this.root = new RootNode(data);
     return this.root;
   }

@@ -1,7 +1,8 @@
 import { describe, it } from "https://deno.land/std@0.141.0/testing/bdd.ts";
 import { assertObjectMatch } from "https://deno.land/std@0.141.0/testing/asserts.ts";
-import { parser } from "./parser.ts";
+import { parser, ASTNode } from "./parser.ts";
 import { TokenType } from "./scanner.ts";
+import { Tree } from './tree.ts';
 
 describe("Parser", () => {
   describe("Variables", () => {
@@ -82,7 +83,7 @@ describe("Parser", () => {
       ];
       const ast = parser(tokens);
       
-      assertObjectMatch(ast.root?.children[0].data, {
+      assertObjectMatch(ast.root?.children[0].data as Tree<ASTNode>, {
         type: "VariableDeclaration",
         declarations: [
           {
@@ -92,7 +93,7 @@ describe("Parser", () => {
           },
         ],
       });
-      assertObjectMatch(ast.root?.children[1].data, {
+      assertObjectMatch(ast.root?.children[1].data as Tree<ASTNode>, {
         type: "VariableDeclaration",
         declarations: [
           {
@@ -173,7 +174,7 @@ describe("Parser", () => {
       ];
       const ast = parser(tokens);
 
-      assertObjectMatch(ast.root?.children[0].data, {
+      assertObjectMatch(ast.root?.children[0].data as Tree<ASTNode>, {
         type: "VariableDeclaration",
         declarations: [
           {

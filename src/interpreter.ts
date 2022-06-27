@@ -1,7 +1,7 @@
 import { Tree } from "./tree.ts";
 import { ASTNode, ASTNodeType, IProgram } from "./parser.ts";
 
-function convertTreeToASTTree(tree: Tree): IProgram {
+function convertTreeToASTTree(tree: Tree<ASTNode>): IProgram {
   const astTree: IProgram = {
     type: ASTNodeType.Program,
     body: [],
@@ -67,7 +67,7 @@ function generateCode(node: ASTNode): string {
   return code;
 }
 
-export function interpreter(ast: Tree): string {
+export function interpreter(ast: Tree<ASTNode>): string {
   const astTree = convertTreeToASTTree(ast);
   return generateCode(astTree);
 }

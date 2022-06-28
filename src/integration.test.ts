@@ -33,4 +33,11 @@ var bar = !false
 var baz = !!true
 `;
   await assertSnapshot(t, test(code3));
+
+  const code4 = `
+var foo = 5 * 10
+var bar = 5*10/2;
+var baz = 5*(10/2);
+`;
+  await assertSnapshot(t, test(code4));
 });

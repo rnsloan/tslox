@@ -1,16 +1,6 @@
 import { Tree } from "./tree.ts";
-import { ASTNode, ASTNodeType, IProgram } from "./parser.ts";
-
-function convertTreeToASTTree(tree: Tree<ASTNode>): IProgram {
-  const astTree: IProgram = {
-    type: ASTNodeType.Program,
-    body: [],
-  };
-
-  tree.root?.children.map((child) => astTree.body.push(child.data));
-
-  return astTree;
-}
+import { ASTNode, ASTNodeType } from "./parser.ts";
+import { convertTreeToASTTree } from "./utils.ts";
 
 function generateCode(node: ASTNode): string {
   let code = "";
@@ -30,13 +20,24 @@ function generateCode(node: ASTNode): string {
       }
       break;
     }
+    case ASTNodeType.BinaryExpression: {
+      const left = node.left.type === ASTNodeType.BinaryExpression
+        ? `(${generateCode(node.left)})`
+        : generateCode(node.left);
+      const right = node.right.type === ASTNodeType.BinaryExpression
+        ? `(${generateCode(node.right)})`
+        : generateCode(node.right);
+
+      code = `${left} ${node.operator} ${right}`;
+      break;
+    }
     case ASTNodeType.UnaryExpression: {
       code = node.operator;
       if (node.argument) {
         code += generateCode(node.argument);
       }
       break;
-    }    
+    }
     case ASTNodeType.CallExpression: {
       let args = "";
       if (node.arguments) {
@@ -44,7 +45,7 @@ function generateCode(node: ASTNode): string {
       }
       code = `${node.callee.name}(${args});`;
       break;
-    }    
+    }
     case ASTNodeType.Identifier: {
       code = node.name;
       break;

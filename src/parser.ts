@@ -1,5 +1,8 @@
 import { IToken, TokenType } from "./scanner.ts";
 import { Tree } from "./tree.ts";
+import { convertTreeToASTTree } from "./utils.ts";
+
+type BinaryOperator = "+" | "-" | "*" | "/";
 
 export enum ASTNodeType {
   Program = "Program",
@@ -9,6 +12,7 @@ export enum ASTNodeType {
   UnaryExpression = "UnaryExpression",
   CallExpression = "CallExpression",
   MemberExpression = "MemberExpression",
+  BinaryExpression = "BinaryExpression",
   Identifier = "Identifier",
 }
 export interface IProgram {
@@ -35,6 +39,13 @@ interface ICallExpression {
   callee: IIdentifier;
   arguments?: ASTNode[];
 }
+
+interface IBinaryExpression {
+  type: ASTNodeType.BinaryExpression;
+  operator: BinaryOperator;
+  left: ASTNode;
+  right: ASTNode;
+}
 interface IMemberExpression {
   type: ASTNodeType.MemberExpression;
   object: ILiteral;
@@ -53,208 +64,234 @@ interface IVariableDeclaration {
   declarations: IDeclarator[];
 }
 
-export type ASTNode =
-  | IProgram
-  | IDeclarator
-  | IVariableDeclaration
+type IExpression =
+  | IBinaryExpression
   | IUnaryExpression
   | ICallExpression
   | IMemberExpression
   | ILiteral
   | IIdentifier;
 
-let code: IToken[];
-let position = 0;
+export type ASTNode =
+  | IProgram
+  | IDeclarator
+  | IVariableDeclaration
+  | IExpression;
 
-function match(token: IToken, comparison: TokenType | TokenType[]): boolean {
-  return Array.isArray(comparison)
-    ? comparison.includes(token.type)
-    : token.type === comparison;
+function match(
+  { token, comparison }: {
+    token?: IToken;
+    comparison: TokenType | TokenType[];
+  },
+): boolean {
+  return token?.type
+    ? Array.isArray(comparison)
+      ? comparison.includes(token.type)
+      : token.type === comparison
+    : false;
 }
 
-function advance(amount = 1): IToken {
-  position = position + amount;
-  return code[position];
-}
+export function parser(c: IToken[]): Tree<IProgram> {
+  const code = c;
+  const tree = new Tree();
+  const root = tree.parse({ type: "Program" });
+  let position = 0;
 
-function peek(amount = 1): IToken {
-  return code[position + amount];
-}
+  function advance(amount = 1): IToken {
+    position = position + amount;
+    return code[position];
+  }
 
-function evalStatement(): ASTNode | null {
-  return evalExpresion();
-}
+  function peek(amount = 1): IToken {
+    return code[position + amount];
+  }
 
-function evalExpresion(): ASTNode | null {
-  return evalAssignment();
-}
+  function evalStatement(): ASTNode | null {
+    return evalExpresion();
+  }
 
-function evalAssignment(): ASTNode | null {
-  // TODO: Implement ( call "." )? IDENTIFIER "=" assignment
-  //const primary = evalPrimary();
-  return evalLogicOr();
-}
+  function evalExpresion(): IExpression | null {
+    return evalAssignment();
+  }
 
-// TODO complete implementations
-function evalLogicOr(): ASTNode | null {
-  return evalEquality();
-}
+  function evalAssignment(): IExpression | null {
+    // TODO: Implement ( call "." )? IDENTIFIER "=" assignment
+    //const primary = evalPrimary();
+    return evalLogicOr();
+  }
 
-function evalEquality(): ASTNode | null {
-  return evalComparison();
-}
+  // TODO complete implementations
+  function evalLogicOr(): IExpression | null {
+    return evalEquality();
+  }
 
-function evalComparison(): ASTNode | null {
-  return evalTerm();
-}
+  function evalEquality(): IExpression | null {
+    return evalComparison();
+  }
 
-function evalTerm(): ASTNode | null {
-  return evalFactor();
-}
+  function evalComparison(): IExpression | null {
+    return evalTerm();
+  }
 
-function evalFactor(): ASTNode | null {
-  // TODO implement factor
-  // need to handle expression "(" expression ")"
-  return evalUnary();
-}
+  function evalTerm(): IExpression | null {
+    return evalFactor();
+  }
 
-function evalUnary(): ASTNode | null {
-  if (
-    match(code[position], [
-      TokenType.MINUS,
-      TokenType.BANG,
-    ])
-  ) {
-    const unaryToken = code[position];
+  function evalFactor(): IExpression | null {
+    const unary = evalUnary();
 
-    advance();
+    if (
+      unary &&
+      match({
+        token: code[position],
+        comparison: [TokenType.STAR, TokenType.SLASH],
+      })
+    ) {
+      const operator = code[position].lexeme as BinaryOperator;
 
-    const unary: IUnaryExpression = {
-      type: ASTNodeType.UnaryExpression,
-      operator: match(unaryToken, [
-          TokenType.MINUS,
-        ])
-        ? "-"
-        : "!",
-      prefix: true,
-      argument: evalUnary() as ASTNode,
-    };
+      advance();
+
+      const right = evalFactor();
+
+      if (!right) {
+        throw new Error(
+          "Expected right expression of Binary Expression not found",
+        );
+      }
+
+      const binaryExpression: IBinaryExpression = {
+        type: ASTNodeType.BinaryExpression,
+        operator,
+        left: unary,
+        right,
+      };
+
+      return binaryExpression;
+    }
 
     return unary;
   }
-  return evalCall();
-}
 
-function evalCall(): ILiteral | IIdentifier | ICallExpression | null {
-  // TODO: primary "." IDENTIFIER
-  const primary = evalPrimary();
-  if (primary === null) {
-    return null;
-  }
+  function evalUnary(): IExpression | null {
+    if (
+      match({
+        token: code[position],
+        comparison: [
+          TokenType.MINUS,
+          TokenType.BANG,
+        ],
+      })
+    ) {
+      const unaryToken = code[position];
 
-  if (
-    primary.type === ASTNodeType.Identifier &&
-    match(code[position], TokenType.LEFT_PAREN)
-  ) {
-    const callExpression: ICallExpression = {
-      type: ASTNodeType.CallExpression,
-      callee: primary,
-    };
-    const args: ASTNode[] = [];
+      advance();
 
-    while (code[position] && !match(code[position], TokenType.RIGHT_PAREN)) {
-      if (match(code[position], [TokenType.LEFT_PAREN, TokenType.COMMA])) {
-        advance();
-        continue;
-      }
-
-      const primary = evalPrimary();
-
-      if (primary) {
-        args.push(primary);
-      } else {
-        advance();
-      }
-    }
-
-    if (args.length) {
-      callExpression.arguments = args;
-    }
-
-    // skip ")"
-    advance();
-
-    return callExpression;
-  }
-
-  return primary;
-}
-
-function evalPrimary(): ILiteral | IIdentifier | null {
-  const token = code[position];
-
-  if (
-    match(token, [
-      TokenType.TRUE,
-      TokenType.FALSE,
-      TokenType.THIS,
-      TokenType.NUMBER,
-      TokenType.STRING,
-      TokenType.IDENTIFIER,
-      TokenType.SUPER,
-      TokenType.NIL,
-    ])
-  ) {
-    advance();
-
-    if (match(token, TokenType.NIL)) {
-      return {
-        type: ASTNodeType.Literal,
-        value: null,
-        raw: null,
+      const unary: IUnaryExpression = {
+        type: ASTNodeType.UnaryExpression,
+        operator: match({
+            token: unaryToken,
+            comparison: [
+              TokenType.MINUS,
+            ],
+          })
+          ? "-"
+          : "!",
+        prefix: true,
+        argument: evalUnary() as ASTNode,
       };
-    }
 
-    if (match(token, TokenType.IDENTIFIER)) {
-      return {
-        type: ASTNodeType.Identifier,
-        name: token.lexeme as string,
-      };
+      return unary;
     }
-
-    return {
-      type: ASTNodeType.Literal,
-      value: token.literal as boolean | string | number,
-      raw: `${token.lexeme}`,
-    };
+    return evalCall();
   }
 
-  /*
-  if (match(token, TokenType.LEFT_PAREN)) {
-    const codeSegment: IToken[] = [];
-    let i = position + 1;
-    let leftParensCount = 0;
-
-    while (!match(code[i], TokenType.RIGHT_PAREN) && leftParensCount === 0) {
-      if (match(code[i], TokenType.EOF)) {
-        throw new Error("Expected Right Parenthesis not found");
-      }
-
-      if (match(code[i], TokenType.LEFT_PAREN)) {
-        leftParensCount++;
-      }
-
-      if (match(code[i], TokenType.RIGHT_PAREN)) {
-        leftParensCount--;
-      }
-
-      codeSegment.push(code[i]);
-      i++;
+  function evalCall(): IExpression | null {
+    // TODO: primary "." IDENTIFIER
+    const primary = evalPrimary();
+    if (primary === null) {
+      return null;
     }
 
-    // TODO - fix checkExpresion() to work with code segment
-    if (evalExpresion()) {
-      advance(i);
+    if (
+      primary.type === ASTNodeType.Identifier &&
+      match({ token: code[position], comparison: TokenType.LEFT_PAREN })
+    ) {
+      const callExpression: ICallExpression = {
+        type: ASTNodeType.CallExpression,
+        callee: primary,
+      };
+      const args: ASTNode[] = [];
+
+      while (
+        code[position] &&
+        !match({ token: code[position], comparison: TokenType.RIGHT_PAREN })
+      ) {
+        if (
+          match({
+            token: code[position],
+            comparison: [TokenType.LEFT_PAREN, TokenType.COMMA],
+          })
+        ) {
+          advance();
+          continue;
+        }
+
+        const primary = evalPrimary();
+
+        if (primary) {
+          args.push(primary);
+        } else {
+          advance();
+        }
+      }
+
+      if (args.length) {
+        callExpression.arguments = args;
+      }
+
+      // skip ")"
+      advance();
+
+      return callExpression;
+    }
+
+    return primary;
+  }
+
+  function evalPrimary(): IExpression | null {
+    const token = code[position];
+
+    if (
+      match({
+        token,
+        comparison: [
+          TokenType.TRUE,
+          TokenType.FALSE,
+          TokenType.THIS,
+          TokenType.NUMBER,
+          TokenType.STRING,
+          TokenType.IDENTIFIER,
+          TokenType.SUPER,
+          TokenType.NIL,
+        ],
+      })
+    ) {
+      advance();
+
+      if (match({ token, comparison: TokenType.NIL })) {
+        return {
+          type: ASTNodeType.Literal,
+          value: null,
+          raw: null,
+        };
+      }
+
+      if (match({ token, comparison: TokenType.IDENTIFIER })) {
+        return {
+          type: ASTNodeType.Identifier,
+          name: token.lexeme as string,
+        };
+      }
 
       return {
         type: ASTNodeType.Literal,
@@ -262,39 +299,54 @@ function evalPrimary(): ILiteral | IIdentifier | null {
         raw: `${token.lexeme}`,
       };
     }
-  }
-  */
-  return null;
-}
 
-export function parser(c: IToken[]) {
-  code = c;
-  position = 0;
-  const tree = new Tree();
-  const root = tree.parse({ type: "Program" });
+    if (match({ token, comparison: TokenType.LEFT_PAREN })) {
+      const codeSegment: IToken[] = [];
+      let i = position + 1;
+      let leftParensCount = 0;
 
-  /*
-  function addSibling(data: IASTNode) {
-    if (node) {
-      node.parent?.addChild(data);
+      while (
+        !match({ token: code[i], comparison: TokenType.RIGHT_PAREN }) &&
+        leftParensCount === 0
+      ) {
+        if (match({ token: code[i], comparison: TokenType.EOF })) {
+          throw new Error("Expected Right Parenthesis not found");
+        }
+
+        if (match({ token: code[i], comparison: TokenType.LEFT_PAREN })) {
+          leftParensCount++;
+        }
+
+        if (match({ token: code[i], comparison: TokenType.RIGHT_PAREN })) {
+          leftParensCount--;
+        }
+
+        codeSegment.push(code[i]);
+        i++;
+      }
+
+      // skip codeSegment and closing RIGHT_PAREN
+      position = i;
+      advance();
+
+      const tree = parser(codeSegment);
+      const ast = convertTreeToASTTree(tree);
+
+      return ast.body[0] as IExpression;
     }
-    root.addChild(data);
-  }
 
-  function addChild(data: IASTNode) {
-    node = node ? node.addChild(data) : root.addChild(data);
+    return null;
   }
-  */
 
   function walk(): ASTNode | null {
     let token = code[position];
 
-    if (match(token, TokenType.SEMICOLON)) {
+    if (match({ token, comparison: TokenType.SEMICOLON })) {
       advance();
       return null;
     }
 
-    if (match(token, TokenType.VAR)) {
+    if (match({ token, comparison: TokenType.VAR })) {
       const astNode: IVariableDeclaration = {
         type: ASTNodeType.VariableDeclaration,
         declarations: [],
@@ -302,7 +354,7 @@ export function parser(c: IToken[]) {
 
       token = advance();
 
-      if (!match(token, TokenType.IDENTIFIER)) {
+      if (!match({ token, comparison: TokenType.IDENTIFIER })) {
         throw new Error(
           `Identifier expected got ${token.type} {${token.line}:${token.start}}`,
         );
@@ -321,7 +373,7 @@ export function parser(c: IToken[]) {
         },
       };
 
-      if (match(peek(), TokenType.EQUAL)) {
+      if (match({ token: peek(), comparison: TokenType.EQUAL })) {
         token = advance(2);
         const val = evalExpresion();
         if (val) {
@@ -350,5 +402,5 @@ export function parser(c: IToken[]) {
     }
   }
 
-  return tree;
+  return tree as Tree<IProgram>;
 }

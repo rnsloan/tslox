@@ -134,7 +134,38 @@ export function parser(c: IToken[]): Tree<IProgram> {
   }
 
   function evalTerm(): IExpression | null {
-    return evalFactor();
+    const factor = evalFactor();
+
+    if (
+      factor &&
+      match({
+        token: code[position],
+        comparison: [TokenType.PLUS, TokenType.MINUS],
+      })
+    ) {
+      const operator = code[position].lexeme as BinaryOperator;
+
+      advance();
+
+      const right = evalTerm();
+
+      if (!right) {
+        throw new Error(
+          "Expected right expression of Binary Expression not found",
+        );
+      }
+
+      const binaryExpression: IBinaryExpression = {
+        type: ASTNodeType.BinaryExpression,
+        operator,
+        left: factor,
+        right,
+      };
+
+      return binaryExpression;
+    }
+
+    return factor;
   }
 
   function evalFactor(): IExpression | null {

@@ -1,8 +1,8 @@
 import { assertSnapshot } from "https://deno.land/std@0.143.0/testing/snapshot.ts";
 import { scanner } from "./scanner.ts";
-import { parser, ASTNode } from "./parser.ts";
+import { ASTNode, parser } from "./parser.ts";
 import { interpreter } from "./interpreter.ts";
-import { Tree } from './tree.ts';
+import { Tree } from "./tree.ts";
 
 function test(code: string) {
   const tokens = scanner(code);
@@ -40,4 +40,10 @@ var bar = 5*10/2;
 var baz = 5*(10/2);
 `;
   await assertSnapshot(t, test(code4));
+
+  const code5 = `
+var foo = 2+10/2
+var bar = (2+10)/2
+`;
+  await assertSnapshot(t, test(code5));
 });

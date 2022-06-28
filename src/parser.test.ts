@@ -111,7 +111,7 @@ describe("Parser", () => {
       );
     });
 
-    it("should parse unary", () => {
+    it("should parse unary expressions", () => {
       const tokens = [
         {
           type: TokenType.VAR,
@@ -205,7 +205,7 @@ describe("Parser", () => {
       );
     });
 
-    it("should parse binary", () => {
+    it("should parse binary expressions", () => {
       const tokens = [
         {
           type: TokenType.VAR,
@@ -296,7 +296,6 @@ describe("Parser", () => {
           end: 82,
         },
       ];
-
       const ast = parser(tokens);
 
       assertObjectMatch(
@@ -314,6 +313,122 @@ describe("Parser", () => {
                   type: "BinaryExpression",
                   operator: "*",
                   left: { type: "Literal", value: 5, raw: "5" },
+                  right: { type: "Literal", value: 10, raw: "10" },
+                },
+                right: { type: "Literal", value: 2, raw: "2" },
+              },
+            },
+          ],
+        },
+      );
+
+      const tokens2 = [
+        {
+          type: TokenType.VAR,
+          line: 2,
+          lexeme: "var",
+          literal: null,
+          start: 25,
+          end: 27,
+        },
+        {
+          type: TokenType.IDENTIFIER,
+          line: 2,
+          lexeme: "bar",
+          literal: null,
+          start: 29,
+          end: 31,
+        },
+        {
+          type: TokenType.EQUAL,
+          line: 2,
+          lexeme: "=",
+          literal: null,
+          start: 33,
+          end: 33,
+        },
+        {
+          type: TokenType.LEFT_PAREN,
+          line: 2,
+          lexeme: "(",
+          literal: null,
+          start: 35,
+          end: 35,
+        },
+        {
+          type: TokenType.NUMBER,
+          line: 2,
+          lexeme: "2",
+          literal: 2,
+          start: 36,
+          end: 36,
+        },
+        {
+          type: TokenType.PLUS,
+          line: 2,
+          lexeme: "+",
+          literal: null,
+          start: 37,
+          end: 37,
+        },
+        {
+          type: TokenType.NUMBER,
+          line: 2,
+          lexeme: "10",
+          literal: 10,
+          start: 38,
+          end: 39,
+        },
+        {
+          type: TokenType.RIGHT_PAREN,
+          line: 2,
+          lexeme: ")",
+          literal: null,
+          start: 40,
+          end: 40,
+        },
+        {
+          type: TokenType.SLASH,
+          line: 2,
+          lexeme: "/",
+          literal: null,
+          start: 41,
+          end: 41,
+        },
+        {
+          type: TokenType.NUMBER,
+          line: 2,
+          lexeme: "2",
+          literal: 2,
+          start: 42,
+          end: 42,
+        },
+        {
+          type: TokenType.EOF,
+          line: 2,
+          lexeme: "",
+          literal: null,
+          start: 44,
+          end: 44,
+        },
+      ];
+      const ast2 = parser(tokens2);
+
+      assertObjectMatch(
+        ast2.root?.children[0].data as unknown as Tree<IProgram>,
+        {
+          type: "VariableDeclaration",
+          declarations: [
+            {
+              type: "VariableDeclarator",
+              id: { type: "Identifier", name: "bar" },
+              init: {
+                type: "BinaryExpression",
+                operator: "/",
+                left: {
+                  type: "BinaryExpression",
+                  operator: "+",
+                  left: { type: "Literal", value: 2, raw: "2" },
                   right: { type: "Literal", value: 10, raw: "10" },
                 },
                 right: { type: "Literal", value: 2, raw: "2" },

@@ -25,3 +25,8 @@ snapshot[`Integration 4`] = `
 var bar = 5 * (10 / 2);
 var baz = 5 * (10 / 2);"
 `;
+
+snapshot[`Integration 5`] = `
+"var foo = 2 + (10 / 2);
+var bar = (2 + 10) / 2;"
+`;

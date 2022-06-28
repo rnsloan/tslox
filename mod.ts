@@ -14,7 +14,7 @@ const main = async () => {
   const tokens = scanner(code);
 
   if (isDebugMode) {
-    console.table(tokens);
+    console.log(tokens);
     console.log("-------");
   }
 

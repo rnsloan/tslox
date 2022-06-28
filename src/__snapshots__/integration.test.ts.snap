@@ -30,3 +30,15 @@ snapshot[`Integration 5`] = `
 "var foo = 2 + (10 / 2);
 var bar = (2 + 10) / 2;"
 `;
+
+snapshot[`Integration 6`] = `
+'10 != 6
+"a" >= "b"
+6 < 4
+foo != bar'
+`;
+
+snapshot[`Integration 7`] = `
+"6 || null
+(6 && null) || bar"
+`;

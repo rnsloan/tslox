@@ -14,7 +14,7 @@ const main = async () => {
   const tokens = scanner(code);
 
   if (isDebugMode) {
-    console.log(tokens);
+    console.table(tokens);
     console.log("-------");
   }
 
@@ -24,6 +24,8 @@ const main = async () => {
     console.dir(ast.root, { depth: 50 });
     console.log("-------");
   }
+
+  return;
 
   const js = interpreter(ast);
 

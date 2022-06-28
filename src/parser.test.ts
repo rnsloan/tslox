@@ -204,7 +204,7 @@ describe("Parser", () => {
         },
       );
     });
-
+    
     it("should parse binary expressions", () => {
       const tokens = [
         {
@@ -439,4 +439,64 @@ describe("Parser", () => {
       );
     });
   });
+
+  /*
+  describe("Expression Stetements", () => {
+    it("should parse logical expressions", () => {
+      const tokens = [
+        {
+          type: TokenType.IDENTIFIER,
+          line: 2,
+          lexeme: "foo",
+          literal: null,
+          start: 25,
+          end: 27,
+        },
+        {
+          type: TokenType.OR,
+          line: 2,
+          lexeme: "or",
+          literal: null,
+          start: 29,
+          end: 30,
+        },
+        {
+          type: TokenType.IDENTIFIER,
+          line: 2,
+          lexeme: "bar",
+          literal: null,
+          start: 32,
+          end: 34,
+        },
+        {
+          type: TokenType.SEMICOLON,
+          line: 2,
+          lexeme: ";",
+          literal: null,
+          start: 35,
+          end: 35,
+        },
+        {
+          type: TokenType.EOF,
+          line: 2,
+          lexeme: "",
+          literal: null,
+          start: 37,
+          end: 37,
+        },
+      ];
+      const ast = parser(tokens);
+
+      assertObjectMatch(
+        ast.root?.children[0].data as unknown as Tree<IProgram>,
+        {
+          type: "LogicalExpression",
+          operator: "or",
+          left: { type: "Identifier", name: "foo" },
+          right: { type: "Identifier", name: "bar" },
+        },
+      );
+    });
+  });
+  */
 });

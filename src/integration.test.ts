@@ -46,4 +46,18 @@ var foo = 2+10/2
 var bar = (2+10)/2
 `;
   await assertSnapshot(t, test(code5));
+
+  const code6 = `
+10 != 6
+'a' >= 'b'
+6 < 4
+foo != bar
+`;
+  await assertSnapshot(t, test(code6));
+
+  const code7 = `
+6 or null;
+(6 and null) or bar;
+  `;
+  await assertSnapshot(t, test(code7));
 });

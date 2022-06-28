@@ -3,16 +3,19 @@ import { Tree } from "./tree.ts";
 import { convertTreeToASTTree } from "./utils.ts";
 
 type BinaryOperator = "+" | "-" | "*" | "/";
+type LogicalOperator = "and" | "or";
 
 export enum ASTNodeType {
   Program = "Program",
   Literal = "Literal",
   VariableDeclaration = "VariableDeclaration",
+  ExpressionStatement = "ExpressionStatement",
   VariableDeclarator = "VariableDeclarator",
   UnaryExpression = "UnaryExpression",
   CallExpression = "CallExpression",
   MemberExpression = "MemberExpression",
   BinaryExpression = "BinaryExpression",
+  LogicalExpression = "LogicalExpression",
   Identifier = "Identifier",
 }
 export interface IProgram {
@@ -40,11 +43,16 @@ interface ICallExpression {
   arguments?: ASTNode[];
 }
 
-interface IBinaryExpression {
-  type: ASTNodeType.BinaryExpression;
-  operator: BinaryOperator;
+interface ILogicalExpression {
+  type: ASTNodeType.LogicalExpression;
+  operator: LogicalOperator;
   left: ASTNode;
   right: ASTNode;
+}
+interface IBinaryExpression
+  extends Omit<ILogicalExpression, "type" | "operator"> {
+  type: ASTNodeType.BinaryExpression;
+  operator: BinaryOperator;
 }
 interface IMemberExpression {
   type: ASTNodeType.MemberExpression;
@@ -64,7 +72,13 @@ interface IVariableDeclaration {
   declarations: IDeclarator[];
 }
 
+interface IExpressionStatement {
+  type: ASTNodeType.ExpressionStatement;
+  expression: IExpression;
+}
+
 type IExpression =
+  | ILogicalExpression
   | IBinaryExpression
   | IUnaryExpression
   | ICallExpression
@@ -76,6 +90,7 @@ export type ASTNode =
   | IProgram
   | IDeclarator
   | IVariableDeclaration
+  | IExpressionStatement
   | IExpression;
 
 function match(
@@ -106,48 +121,24 @@ export function parser(c: IToken[]): Tree<IProgram> {
     return code[position + amount];
   }
 
-  function evalStatement(): ASTNode | null {
-    return evalExpresion();
-  }
-
-  function evalExpresion(): IExpression | null {
-    return evalAssignment();
-  }
-
-  function evalAssignment(): IExpression | null {
-    // TODO: Implement ( call "." )? IDENTIFIER "=" assignment
-    //const primary = evalPrimary();
-    return evalLogicOr();
-  }
-
-  // TODO complete implementations
-  function evalLogicOr(): IExpression | null {
-    return evalEquality();
-  }
-
-  function evalEquality(): IExpression | null {
-    return evalComparison();
-  }
-
-  function evalComparison(): IExpression | null {
-    return evalTerm();
-  }
-
-  function evalTerm(): IExpression | null {
-    const factor = evalFactor();
+  function evalLogical(
+    func: () => IExpression | null,
+    comparison: TokenType[],
+  ): IExpression | null {
+    const node = func();
 
     if (
-      factor &&
+      node &&
       match({
         token: code[position],
-        comparison: [TokenType.PLUS, TokenType.MINUS],
+        comparison,
       })
     ) {
-      const operator = code[position].lexeme as BinaryOperator;
+      const operator = code[position].lexeme as LogicalOperator;
 
       advance();
 
-      const right = evalTerm();
+      const right = evalFactor();
 
       if (!right) {
         throw new Error(
@@ -155,27 +146,30 @@ export function parser(c: IToken[]): Tree<IProgram> {
         );
       }
 
-      const binaryExpression: IBinaryExpression = {
-        type: ASTNodeType.BinaryExpression,
+      const logicalExpression: ILogicalExpression = {
+        type: ASTNodeType.LogicalExpression,
         operator,
-        left: factor,
+        left: node,
         right,
       };
 
-      return binaryExpression;
+      return logicalExpression;
     }
 
-    return factor;
+    return node;
   }
 
-  function evalFactor(): IExpression | null {
-    const unary = evalUnary();
+  function evalBinary(
+    func: () => IExpression | null,
+    comparison: TokenType[],
+  ): IExpression | null {
+    const node = func();
 
     if (
-      unary &&
+      node &&
       match({
         token: code[position],
-        comparison: [TokenType.STAR, TokenType.SLASH],
+        comparison,
       })
     ) {
       const operator = code[position].lexeme as BinaryOperator;
@@ -193,14 +187,56 @@ export function parser(c: IToken[]): Tree<IProgram> {
       const binaryExpression: IBinaryExpression = {
         type: ASTNodeType.BinaryExpression,
         operator,
-        left: unary,
+        left: node,
         right,
       };
 
       return binaryExpression;
     }
 
-    return unary;
+    return node;
+  }
+
+  function evalStatement(): ASTNode | null {
+    return evalExpresion();
+  }
+
+  function evalExpresion(): IExpression | null {
+    return evalAssignment();
+  }
+
+  function evalAssignment(): IExpression | null {
+    // TODO: Implement ( call "." )? IDENTIFIER "=" assignment
+    //const primary = evalPrimary();
+    return evalLogical(evalLogicOr, [TokenType.AND]);
+  }
+
+  function evalLogicOr(): IExpression | null {
+    return evalLogical(evalEquality, [TokenType.OR]);
+  }
+
+  function evalEquality(): IExpression | null {
+    return evalBinary(evalComparison, [
+      TokenType.BANG_EQUAL,
+      TokenType.EQUAL_EQUAL,
+    ]);
+  }
+
+  function evalComparison(): IExpression | null {
+    return evalBinary(evalTerm, [
+      TokenType.GREATER,
+      TokenType.GREATER_EQUAL,
+      TokenType.LESS,
+      TokenType.LESS_EQUAL,
+    ]);
+  }
+
+  function evalTerm(): IExpression | null {
+    return evalBinary(evalFactor, [TokenType.PLUS, TokenType.MINUS]);
+  }
+
+  function evalFactor(): IExpression | null {
+    return evalBinary(evalUnary, [TokenType.STAR, TokenType.SLASH]);
   }
 
   function evalUnary(): IExpression | null {
@@ -378,7 +414,7 @@ export function parser(c: IToken[]): Tree<IProgram> {
     }
 
     if (match({ token, comparison: TokenType.VAR })) {
-      const astNode: IVariableDeclaration = {
+      const variableDeclaration: IVariableDeclaration = {
         type: ASTNodeType.VariableDeclaration,
         declarations: [],
       };
@@ -416,11 +452,18 @@ export function parser(c: IToken[]): Tree<IProgram> {
         }
       }
 
-      astNode.declarations.push(declarator);
+      variableDeclaration.declarations.push(declarator);
 
-      return astNode;
+      return variableDeclaration;
     }
 
+    /*
+    const expressionStatement: IExpressionStatement = {
+      type: ASTNodeType.ExpressionStatement,
+      expression: evalStatement() as IExpression
+    }
+    */
+   
     return evalStatement();
   }
 

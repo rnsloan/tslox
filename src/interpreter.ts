@@ -20,6 +20,18 @@ function generateCode(node: ASTNode): string {
       }
       break;
     }
+    case ASTNodeType.LogicalExpression: {
+      const left = node.left.type === ASTNodeType.LogicalExpression
+        ? `(${generateCode(node.left)})`
+        : generateCode(node.left);
+      const right = node.right.type === ASTNodeType.LogicalExpression
+        ? `(${generateCode(node.right)})`
+        : generateCode(node.right);
+      const operator = node.operator === "or" ? "||" : "&&";
+
+      code = `${left} ${operator} ${right}`;
+      break;
+    }
     case ASTNodeType.BinaryExpression: {
       const left = node.left.type === ASTNodeType.BinaryExpression
         ? `(${generateCode(node.left)})`

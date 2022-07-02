@@ -156,8 +156,6 @@ export function scanner(input: string): IToken[] {
   function identifier() {
     const start = position;
 
-    advance();
-
     while (isAlphaNumeric(peek())) {
       advance();
     }

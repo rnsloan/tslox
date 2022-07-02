@@ -56,7 +56,7 @@ interface IBinaryExpression
 }
 interface IMemberExpression {
   type: ASTNodeType.MemberExpression;
-  object: ILiteral;
+  object: IIdentifier | IMemberExpression;
   property: IIdentifier;
 }
 interface IDeclarator {
@@ -273,19 +273,19 @@ export function parser(c: IToken[]): Tree<IProgram> {
   }
 
   function evalCall(): IExpression | null {
-    // TODO: primary "." IDENTIFIER
-    const primary = evalPrimary();
-    if (primary === null) {
+    let response = evalPrimary();
+
+    if (response === null) {
       return null;
     }
 
     if (
-      primary.type === ASTNodeType.Identifier &&
+      response.type === ASTNodeType.Identifier &&
       match({ token: code[position], comparison: TokenType.LEFT_PAREN })
     ) {
       const callExpression: ICallExpression = {
         type: ASTNodeType.CallExpression,
-        callee: primary,
+        callee: response,
       };
       const args: ASTNode[] = [];
 
@@ -322,7 +322,41 @@ export function parser(c: IToken[]): Tree<IProgram> {
       return callExpression;
     }
 
-    return primary;
+    if (
+      response.type === ASTNodeType.Identifier &&
+      match({ token: code[position], comparison: TokenType.DOT })
+    ) {
+      advance();
+
+      let memberExpressions: IMemberExpression = {
+        type: ASTNodeType.MemberExpression,
+        object: response,
+        property: evalPrimary(),
+      };
+
+      while (
+        match({
+          token: code[position],
+          comparison: [TokenType.DOT, TokenType.IDENTIFIER],
+        })
+      ) {
+        if (
+          match({ token: code[position], comparison: TokenType.IDENTIFIER })
+        ) {
+          memberExpressions = {
+            type: ASTNodeType.MemberExpression,
+            object: memberExpressions,
+            property: evalPrimary(),
+          };
+        } else {
+          advance();
+        }
+      }
+
+      return memberExpressions;
+    }
+
+    return response;
   }
 
   function evalPrimary(): IExpression | null {
@@ -463,7 +497,7 @@ export function parser(c: IToken[]): Tree<IProgram> {
       expression: evalStatement() as IExpression
     }
     */
-   
+
     return evalStatement();
   }
 

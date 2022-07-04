@@ -39,7 +39,7 @@ interface IUnaryExpression {
 }
 interface ICallExpression {
   type: ASTNodeType.CallExpression;
-  callee: IIdentifier;
+  callee: IIdentifier | IMemberExpression;
   arguments?: ASTNode[];
 }
 
@@ -58,6 +58,8 @@ interface IMemberExpression {
   type: ASTNodeType.MemberExpression;
   object: IIdentifier | IMemberExpression;
   property: IIdentifier;
+  computed: boolean;
+  optional: boolean;
 }
 interface IDeclarator {
   type: ASTNodeType.VariableDeclarator;
@@ -273,8 +275,8 @@ export function parser(c: IToken[]): Tree<IProgram> {
     const response = evalCall();
 
     if (
-      response?.type ===
-        (ASTNodeType.Identifier || ASTNodeType.CallExpression) &&
+      (response?.type === ASTNodeType.Identifier ||
+        response?.type === ASTNodeType.CallExpression) &&
       match({ token: code[position], comparison: TokenType.DOT })
     ) {
       const expressions: IExpression[] = [response];
@@ -294,19 +296,29 @@ export function parser(c: IToken[]): Tree<IProgram> {
         }
       }
 
-      if (
-        expressions.every((expression) =>
-          expression.type === ASTNodeType.Identifier
-        )
-      ) {
-        return expressions.reduce(
-          (accumulator, value): IMemberExpression => ({
+      return expressions.reduce(
+        (accumulator, value): IMemberExpression | ICallExpression => {
+          if (value.type === ASTNodeType.CallExpression) {
+            return {
+              ...value,
+              callee: {
+                type: ASTNodeType.MemberExpression,
+                object: accumulator as IIdentifier | IMemberExpression,
+                property: value.callee as IIdentifier,
+                computed: false,
+                optional: false,
+              },
+            };
+          }
+          return {
             type: ASTNodeType.MemberExpression,
             object: accumulator as IIdentifier | IMemberExpression,
             property: value as IIdentifier,
-          }),
-        );
-      }
+            computed: false,
+            optional: false,
+          };
+        },
+      );
     }
 
     return response;

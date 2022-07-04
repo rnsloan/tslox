@@ -9,8 +9,8 @@ var gamma = null;'
 `;
 
 snapshot[`Integration 2`] = `
-'foo(true);
-bar();
+'foo(true)
+bar()
 var foo = hello(34,"world");'
 `;
 
@@ -46,4 +46,11 @@ snapshot[`Integration 7`] = `
 snapshot[`Integration 8`] = `
 "var one = foo.bar;
 var two = foo.bar.baz.troll;"
+`;
+
+snapshot[`Integration 9`] = `
+"var one = newPoint(2,0).y;
+var two = foo.bar().baz;
+var three = foo().bar().baz();
+var four = foo.bar.baz();"
 `;

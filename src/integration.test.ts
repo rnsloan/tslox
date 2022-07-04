@@ -66,4 +66,12 @@ var one = foo.bar;
 var two = foo.bar.baz.troll;
   `;
   await assertSnapshot(t, test(code8));
+
+  const code9 = `
+var one = newPoint(2, 0).y; 
+var two = foo.bar().baz;
+var three = foo().bar().baz()
+var four = foo.bar.baz()
+    `;
+  await assertSnapshot(t, test(code9));
 });

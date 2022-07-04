@@ -55,7 +55,7 @@ function generateCode(node: ASTNode): string {
       if (node.arguments) {
         args = node.arguments.map((arg) => generateCode(arg)).join(",");
       }
-      code = `${node.callee.name}(${args});`;
+      code = `${generateCode(node.callee)}(${args})`;
       break;
     }
     case ASTNodeType.Identifier: {
@@ -63,7 +63,7 @@ function generateCode(node: ASTNode): string {
       break;
     }
     case ASTNodeType.Literal: {
-      if (node.value || node.value === false) {
+      if (node.value || node.value === false || node.value === 0) {
         code = `${node.value}`;
       } else if (node.raw === null) {
         code = "null";
@@ -73,7 +73,7 @@ function generateCode(node: ASTNode): string {
       break;
     }
     case ASTNodeType.MemberExpression: {
-      code = `${generateCode(node.object)}.${generateCode(node.property)}`;      
+      code = `${generateCode(node.object)}.${generateCode(node.property)}`;
       break;
     }
     default: {

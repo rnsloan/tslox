@@ -11,6 +11,7 @@ export enum ASTNodeType {
   VariableDeclaration = "VariableDeclaration",
   ExpressionStatement = "ExpressionStatement",
   VariableDeclarator = "VariableDeclarator",
+  AssignmentExpression = "AssignmentExpression",
   UnaryExpression = "UnaryExpression",
   CallExpression = "CallExpression",
   MemberExpression = "MemberExpression",
@@ -49,6 +50,13 @@ interface ILogicalExpression {
   left: ASTNode;
   right: ASTNode;
 }
+
+interface IAssignmentExpression
+  extends Omit<ILogicalExpression, "type" | "operator"> {
+  type: ASTNodeType.AssignmentExpression;
+  operator: "=";
+}
+
 interface IBinaryExpression
   extends Omit<ILogicalExpression, "type" | "operator"> {
   type: ASTNodeType.BinaryExpression;
@@ -80,6 +88,7 @@ interface IExpressionStatement {
 }
 
 type IExpression =
+  | IAssignmentExpression
   | ILogicalExpression
   | IBinaryExpression
   | IUnaryExpression
@@ -208,9 +217,27 @@ export function parser(c: IToken[]): Tree<IProgram> {
   }
 
   function evalAssignment(): IExpression | null {
-    // TODO: Implement ( call "." )? IDENTIFIER "=" assignment
-    //const primary = evalPrimary();
-    return evalLogical(evalLogicOr, [TokenType.AND]);
+    const response = evalLogical(evalLogicOr, [TokenType.AND]);
+
+    if (
+      response && match({ token: code[position], comparison: TokenType.EQUAL })
+    ) {
+      advance();
+      const right = evalAssignment();
+
+      if (!right) {
+        throw new Error("expected right hand side of AssignmentExpression");
+      }
+
+      const foo: IAssignmentExpression = {
+        type: ASTNodeType.AssignmentExpression,
+        operator: "=",
+        left: response,
+        right,
+      };
+      return foo;
+    }
+    return response;
   }
 
   function evalLogicOr(): IExpression | null {

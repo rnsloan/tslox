@@ -54,3 +54,5 @@ var two = foo.bar().baz;
 var three = foo().bar().baz();
 var four = foo.bar.baz();"
 `;
+
+snapshot[`Integration 10`] = `"newPoint(x,2,0).y = 3"`;

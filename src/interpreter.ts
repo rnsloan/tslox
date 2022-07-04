@@ -32,7 +32,8 @@ function generateCode(node: ASTNode): string {
       code = `${left} ${operator} ${right}`;
       break;
     }
-    case ASTNodeType.BinaryExpression: {
+    case ASTNodeType.BinaryExpression:
+    case ASTNodeType.AssignmentExpression: {
       const left = node.left.type === ASTNodeType.BinaryExpression
         ? `(${generateCode(node.left)})`
         : generateCode(node.left);
@@ -58,6 +59,10 @@ function generateCode(node: ASTNode): string {
       code = `${generateCode(node.callee)}(${args})`;
       break;
     }
+    case ASTNodeType.MemberExpression: {
+      code = `${generateCode(node.object)}.${generateCode(node.property)}`;
+      break;
+    }
     case ASTNodeType.Identifier: {
       code = node.name;
       break;
@@ -70,10 +75,6 @@ function generateCode(node: ASTNode): string {
       } else {
         code = `"${node.raw}"`;
       }
-      break;
-    }
-    case ASTNodeType.MemberExpression: {
-      code = `${generateCode(node.object)}.${generateCode(node.property)}`;
       break;
     }
     default: {

@@ -25,8 +25,6 @@ const main = async () => {
     console.log("-------");
   }
 
-  return;
-
   const js = interpreter(ast);
 
   if (isDebugMode) {

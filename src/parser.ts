@@ -269,11 +269,51 @@ export function parser(c: IToken[]): Tree<IProgram> {
 
       return unary;
     }
-    return evalCall();
+
+    const response = evalCall();
+
+    if (
+      response?.type ===
+        (ASTNodeType.Identifier || ASTNodeType.CallExpression) &&
+      match({ token: code[position], comparison: TokenType.DOT })
+    ) {
+      const expressions: IExpression[] = [response];
+
+      while (
+        match({
+          token: code[position],
+          comparison: [TokenType.DOT, TokenType.IDENTIFIER],
+        })
+      ) {
+        if (
+          match({ token: code[position], comparison: TokenType.IDENTIFIER })
+        ) {
+          expressions.push(evalCall() as IExpression);
+        } else {
+          advance();
+        }
+      }
+
+      if (
+        expressions.every((expression) =>
+          expression.type === ASTNodeType.Identifier
+        )
+      ) {
+        return expressions.reduce(
+          (accumulator, value): IMemberExpression => ({
+            type: ASTNodeType.MemberExpression,
+            object: accumulator as IIdentifier | IMemberExpression,
+            property: value as IIdentifier,
+          }),
+        );
+      }
+    }
+
+    return response;
   }
 
   function evalCall(): IExpression | null {
-    let response = evalPrimary();
+    const response = evalPrimary();
 
     if (response === null) {
       return null;
@@ -320,40 +360,6 @@ export function parser(c: IToken[]): Tree<IProgram> {
       advance();
 
       return callExpression;
-    }
-
-    if (
-      response.type === ASTNodeType.Identifier &&
-      match({ token: code[position], comparison: TokenType.DOT })
-    ) {
-      advance();
-
-      let memberExpressions: IMemberExpression = {
-        type: ASTNodeType.MemberExpression,
-        object: response,
-        property: evalPrimary(),
-      };
-
-      while (
-        match({
-          token: code[position],
-          comparison: [TokenType.DOT, TokenType.IDENTIFIER],
-        })
-      ) {
-        if (
-          match({ token: code[position], comparison: TokenType.IDENTIFIER })
-        ) {
-          memberExpressions = {
-            type: ASTNodeType.MemberExpression,
-            object: memberExpressions,
-            property: evalPrimary(),
-          };
-        } else {
-          advance();
-        }
-      }
-
-      return memberExpressions;
     }
 
     return response;

@@ -42,3 +42,8 @@ snapshot[`Integration 7`] = `
 "6 || null
 (6 && null) || bar"
 `;
+
+snapshot[`Integration 8`] = `
+"var one = foo.bar;
+var two = foo.bar.baz.troll;"
+`;

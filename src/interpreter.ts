@@ -72,6 +72,10 @@ function generateCode(node: ASTNode): string {
       }
       break;
     }
+    case ASTNodeType.MemberExpression: {
+      code = `${generateCode(node.object)}.${generateCode(node.property)}`;      
+      break;
+    }
     default: {
       throw new Error(`Unrecognised AST type ${node.type}`);
     }

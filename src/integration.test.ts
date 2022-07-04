@@ -60,4 +60,10 @@ foo != bar
 (6 and null) or bar;
   `;
   await assertSnapshot(t, test(code7));
+
+  const code8 = `
+var one = foo.bar;
+var two = foo.bar.baz.troll;
+  `;
+  await assertSnapshot(t, test(code8));
 });

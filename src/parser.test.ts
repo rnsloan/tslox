@@ -204,7 +204,7 @@ describe("Parser", () => {
         },
       );
     });
-    
+
     it("should parse binary expressions", () => {
       const tokens = [
         {
@@ -432,6 +432,126 @@ describe("Parser", () => {
                   right: { type: "Literal", value: 10, raw: "10" },
                 },
                 right: { type: "Literal", value: 2, raw: "2" },
+              },
+            },
+          ],
+        },
+      );
+    });
+
+    it("should parse member expressions", () => {
+      const tokens = [
+        {
+          type: TokenType.VAR,
+          line: 6,
+          lexeme: "var",
+          literal: null,
+          start: 111,
+          end: 113,
+        },
+        {
+          type: TokenType.IDENTIFIER,
+          line: 6,
+          lexeme: "tan",
+          literal: null,
+          start: 115,
+          end: 117,
+        },
+        {
+          type: TokenType.EQUAL,
+          line: 6,
+          lexeme: "=",
+          literal: null,
+          start: 119,
+          end: 119,
+        },
+        {
+          type: TokenType.IDENTIFIER,
+          line: 6,
+          lexeme: "foo",
+          literal: null,
+          start: 121,
+          end: 123,
+        },
+        {
+          type: TokenType.DOT,
+          line: 6,
+          lexeme: ".",
+          literal: null,
+          start: 124,
+          end: 124,
+        },
+        {
+          type: TokenType.IDENTIFIER,
+          line: 6,
+          lexeme: "bar",
+          literal: null,
+          start: 125,
+          end: 127,
+        },
+        {
+          type: TokenType.DOT,
+          line: 6,
+          lexeme: ".",
+          literal: null,
+          start: 128,
+          end: 128,
+        },
+        {
+          type: TokenType.IDENTIFIER,
+          line: 6,
+          lexeme: "baz",
+          literal: null,
+          start: 129,
+          end: 131,
+        },
+        {
+          type: TokenType.DOT,
+          line: 6,
+          lexeme: ".",
+          literal: null,
+          start: 132,
+          end: 132,
+        },
+        {
+          type: TokenType.IDENTIFIER,
+          line: 6,
+          lexeme: "troll",
+          literal: null,
+          start: 133,
+          end: 137,
+        },
+        {
+          type: TokenType.EOF,
+          line: 9,
+          lexeme: "",
+          literal: null,
+          start: 152,
+          end: 152,
+        },
+      ];
+      const ast = parser(tokens);
+
+      assertObjectMatch(
+        ast.root?.children[0].data as unknown as Tree<IProgram>,
+        {
+          type: "VariableDeclaration",
+          declarations: [
+            {
+              type: "VariableDeclarator",
+              id: { type: "Identifier", name: "tan" },
+              init: {
+                type: "MemberExpression",
+                object: {
+                  type: "MemberExpression",
+                  object: {
+                    type: "MemberExpression",
+                    object: { type: "Identifier", name: "foo" },
+                    property: { type: "Identifier", name: "bar" },
+                  },
+                  property: { type: "Identifier", name: "baz" },
+                },
+                property: { type: "Identifier", name: "troll" },
               },
             },
           ],

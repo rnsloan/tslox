@@ -132,6 +132,43 @@ export function parser(c: IToken[]): Tree<IProgram> {
     return code[position + amount];
   }
 
+  function consume(
+    { startToken, endToken }: { startToken: TokenType; endToken: TokenType },
+  ): IExpression {
+    const codeSegment: IToken[] = [];
+    let i = position + 1;
+    let startTokenCount = 0;
+
+    while (
+      !match({ token: code[i], comparison: endToken }) &&
+      startTokenCount === 0
+    ) {
+      if (match({ token: code[i], comparison: TokenType.EOF })) {
+        throw new Error(`Expected character '${endToken}' not found`);
+      }
+
+      if (match({ token: code[i], comparison: startToken })) {
+        startTokenCount++;
+      }
+
+      if (match({ token: code[i], comparison: endToken })) {
+        startTokenCount--;
+      }
+
+      codeSegment.push(code[i]);
+      i++;
+    }
+
+    // skip codeSegment and closing endToken
+    position = i;
+    advance();
+
+    const tree = parser(codeSegment);
+    const ast = convertTreeToASTTree(tree);
+
+    return ast.body[0] as IExpression;
+  }
+
   function evalLogical(
     func: () => IExpression | null,
     comparison: TokenType[],
@@ -447,38 +484,10 @@ export function parser(c: IToken[]): Tree<IProgram> {
     }
 
     if (match({ token, comparison: TokenType.LEFT_PAREN })) {
-      const codeSegment: IToken[] = [];
-      let i = position + 1;
-      let leftParensCount = 0;
-
-      while (
-        !match({ token: code[i], comparison: TokenType.RIGHT_PAREN }) &&
-        leftParensCount === 0
-      ) {
-        if (match({ token: code[i], comparison: TokenType.EOF })) {
-          throw new Error("Expected Right Parenthesis not found");
-        }
-
-        if (match({ token: code[i], comparison: TokenType.LEFT_PAREN })) {
-          leftParensCount++;
-        }
-
-        if (match({ token: code[i], comparison: TokenType.RIGHT_PAREN })) {
-          leftParensCount--;
-        }
-
-        codeSegment.push(code[i]);
-        i++;
-      }
-
-      // skip codeSegment and closing RIGHT_PAREN
-      position = i;
-      advance();
-
-      const tree = parser(codeSegment);
-      const ast = convertTreeToASTTree(tree);
-
-      return ast.body[0] as IExpression;
+      return consume({
+        startToken: TokenType.LEFT_PAREN,
+        endToken: TokenType.RIGHT_PAREN,
+      });
     }
 
     return null;
@@ -535,13 +544,6 @@ export function parser(c: IToken[]): Tree<IProgram> {
 
       return variableDeclaration;
     }
-
-    /*
-    const expressionStatement: IExpressionStatement = {
-      type: ASTNodeType.ExpressionStatement,
-      expression: evalStatement() as IExpression
-    }
-    */
 
     return evalStatement();
   }

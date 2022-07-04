@@ -102,6 +102,14 @@ Deno.test("identifers", () => {
     end: 6,
   });
 
+  output = scanner(`var foo = y('h')`);
+  assertObjectMatch(output[3], {
+    lexeme: "y",
+    type: TokenType.IDENTIFIER,
+    start: 10,
+    end: 10,
+  });
+
   output = scanner(`var foo = false`);
   assertObjectMatch(output[3], {
     lexeme: "false",

@@ -20,13 +20,16 @@ function generateCode(node: ASTNode): string {
       }
       break;
     }
+    case ASTNodeType.WhileStatement: {
+      code = `while (${generateCode(node.test)}) ${generateCode(node.body)}`;
+      break;
+    }
     case ASTNodeType.BlockStatement: {
       const declarations = node.body.map((declaration) =>
         generateCode(declaration)
       );
-      code = `
-{
-  ${declarations.join(';')}
+      code = `{
+  ${declarations.join(";")}
 }`;
       break;
     }

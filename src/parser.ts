@@ -7,6 +7,7 @@ type LogicalOperator = "and" | "or";
 
 export enum ASTNodeType {
   Program = "Program",
+  WhileStatement = "WhileStatement",
   BlockStatement = "BlockStatement",
   Literal = "Literal",
   VariableDeclaration = "VariableDeclaration",
@@ -88,6 +89,12 @@ interface IExpressionStatement {
   expression: IExpression;
 }
 
+interface IWhileStatement {
+  type: ASTNodeType.WhileStatement;
+  test: IExpression;
+  body: IStatement;
+}
+
 interface IBlock {
   type: ASTNodeType.BlockStatement;
   body: IDeclaratation[];
@@ -103,7 +110,7 @@ type IExpression =
   | ILiteral
   | IIdentifier;
 
-type IStatement = IExpressionStatement | IBlock;
+type IStatement = IExpression | IWhileStatement | IBlock;
 
 type IDeclaratation = IVariableDeclaration | IStatement;
 export type ASTNode =
@@ -254,11 +261,35 @@ export function parser(c: IToken[]): Tree<IProgram> {
     return node;
   }
 
-  function evalStatement(): ASTNode | null {
+  function evalStatement(): IStatement | null {
     if (match({ token: code[position], comparison: TokenType.LEFT_BRACE })) {
       return evalBlock();
     }
+    if (match({ token: code[position], comparison: TokenType.WHILE })) {
+      return evalWhile();
+    }
     return evalExpresion();
+  }
+
+  function evalWhile(): IWhileStatement {
+    advance();
+
+    const expression = consume({
+      startToken: TokenType.LEFT_PAREN,
+      endToken: TokenType.RIGHT_PAREN,
+    })[0] as IExpression;
+
+    const statement = evalStatement();
+
+    if (!statement) {
+      throw new Error(`expected statement for 'While' statement`);
+    }
+
+    return {
+      type: ASTNodeType.WhileStatement,
+      test: expression,
+      body: statement,
+    };
   }
 
   function evalBlock(): IBlock {

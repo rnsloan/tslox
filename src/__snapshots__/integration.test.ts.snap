@@ -58,8 +58,15 @@ var four = foo.bar.baz();"
 snapshot[`Integration 10`] = `"newPoint(x,2,0).y = 3"`;
 
 snapshot[`Integration 11`] = `
-"
-{
+"{
   newPoint(x,2,0).y = 3;var tan = 7;
 }"
 `;
+
+snapshot[`Integration 12`] = `
+"while (foo < 4) {
+  i + 1;foo + 1
+}"
+`;
+
+snapshot[`Integration 13`] = `"while (i < 10) i + 1"`;

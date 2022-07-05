@@ -85,4 +85,17 @@ var four = foo.bar.baz()
 }
 `;
   await assertSnapshot(t, test(code11));
+
+  const code12 = `
+while (foo < 4) {
+  i+1
+  foo + 1
+}
+`;
+  await assertSnapshot(t, test(code12));
+
+  const code13 = `
+while (i < 10) i+1
+`;
+  await assertSnapshot(t, test(code13));
 });

@@ -70,3 +70,5 @@ snapshot[`Integration 12`] = `
 `;
 
 snapshot[`Integration 13`] = `"while (i < 10) i + 1"`;
+
+snapshot[`Integration 14`] = `"return foo < bar;"`;

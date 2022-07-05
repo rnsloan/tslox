@@ -94,8 +94,9 @@ while (foo < 4) {
 `;
   await assertSnapshot(t, test(code12));
 
-  const code13 = `
-while (i < 10) i+1
-`;
+  const code13 = `while (i < 10) i+1`;
   await assertSnapshot(t, test(code13));
+
+  const code14 = `return foo < bar;`;
+  await assertSnapshot(t, test(code14));
 });

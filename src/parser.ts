@@ -7,6 +7,7 @@ type LogicalOperator = "and" | "or";
 
 export enum ASTNodeType {
   Program = "Program",
+  ReturnStatement = "ReturnStatement",
   WhileStatement = "WhileStatement",
   BlockStatement = "BlockStatement",
   Literal = "Literal",
@@ -89,6 +90,10 @@ interface IExpressionStatement {
   expression: IExpression;
 }
 
+interface IReturnStatement {
+  type: ASTNodeType.ReturnStatement;
+  argument?: IExpression;
+}
 interface IWhileStatement {
   type: ASTNodeType.WhileStatement;
   test: IExpression;
@@ -110,7 +115,7 @@ type IExpression =
   | ILiteral
   | IIdentifier;
 
-type IStatement = IExpression | IWhileStatement | IBlock;
+type IStatement = IExpression | IReturnStatement | IWhileStatement | IBlock;
 
 type IDeclaratation = IVariableDeclaration | IStatement;
 export type ASTNode =
@@ -262,13 +267,41 @@ export function parser(c: IToken[]): Tree<IProgram> {
   }
 
   function evalStatement(): IStatement | null {
-    if (match({ token: code[position], comparison: TokenType.LEFT_BRACE })) {
-      return evalBlock();
+    if (match({ token: code[position], comparison: TokenType.RETURN })) {
+      return evalReturn();
     }
     if (match({ token: code[position], comparison: TokenType.WHILE })) {
       return evalWhile();
     }
+
+    if (match({ token: code[position], comparison: TokenType.LEFT_BRACE })) {
+      return evalBlock();
+    }
+
     return evalExpresion();
+  }
+
+  function evalReturn(): IReturnStatement {
+    advance();
+    let argument;
+
+    if (!match({ token: code[position], comparison: TokenType.SEMICOLON })) {
+      argument = evalExpresion();
+
+      if (!argument) {
+        const token = code[position];
+        throw new Error(
+          `Expected expression for return statement ${token.type} {${token.line}:${token.start}}`,
+        );
+      }
+    }
+
+    const foo: IReturnStatement = {
+      type: ASTNodeType.ReturnStatement,
+      ...(argument && { argument }),
+    };
+
+    return foo;
   }
 
   function evalWhile(): IWhileStatement {

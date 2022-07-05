@@ -20,6 +20,16 @@ function generateCode(node: ASTNode): string {
       }
       break;
     }
+    case ASTNodeType.BlockStatement: {
+      const declarations = node.body.map((declaration) =>
+        generateCode(declaration)
+      );
+      code = `
+{
+  ${declarations.join(';')}
+}`;
+      break;
+    }
     case ASTNodeType.LogicalExpression: {
       const left = node.left.type === ASTNodeType.LogicalExpression
         ? `(${generateCode(node.left)})`

@@ -560,8 +560,7 @@ describe("Parser", () => {
     });
   });
 
-  /*
-  describe("Expression Stetements", () => {
+  describe("Expression Statements", () => {
     it("should parse logical expressions", () => {
       const tokens = [
         {
@@ -618,5 +617,220 @@ describe("Parser", () => {
       );
     });
   });
-  */
+
+  describe("Blocks", () => {
+    it("should parse blocks with multiple declarations", () => {
+      const tokens = [
+        {
+          type: TokenType.LEFT_BRACE,
+          line: 2,
+          lexeme: "{",
+          literal: null,
+          start: 25,
+          end: 25,
+        },
+        {
+          type: TokenType.IDENTIFIER,
+          line: 3,
+          lexeme: "newPoint",
+          literal: null,
+          start: 27,
+          end: 34,
+        },
+        {
+          type: TokenType.LEFT_PAREN,
+          line: 3,
+          lexeme: "(",
+          literal: null,
+          start: 35,
+          end: 35,
+        },
+        {
+          type: TokenType.IDENTIFIER,
+          line: 3,
+          lexeme: "x",
+          literal: null,
+          start: 36,
+          end: 36,
+        },
+        {
+          type: TokenType.PLUS,
+          line: 3,
+          lexeme: "+",
+          literal: null,
+          start: 38,
+          end: 38,
+        },
+        {
+          type: TokenType.NUMBER,
+          line: 3,
+          lexeme: "2",
+          literal: 2,
+          start: 40,
+          end: 40,
+        },
+        {
+          type: TokenType.COMMA,
+          line: 3,
+          lexeme: ",",
+          literal: null,
+          start: 41,
+          end: 41,
+        },
+        {
+          type: TokenType.NUMBER,
+          line: 3,
+          lexeme: "0",
+          literal: 0,
+          start: 43,
+          end: 43,
+        },
+        {
+          type: TokenType.RIGHT_PAREN,
+          line: 3,
+          lexeme: ")",
+          literal: null,
+          start: 44,
+          end: 44,
+        },
+        {
+          type: TokenType.DOT,
+          line: 3,
+          lexeme: ".",
+          literal: null,
+          start: 45,
+          end: 45,
+        },
+        {
+          type: TokenType.IDENTIFIER,
+          line: 3,
+          lexeme: "y",
+          literal: null,
+          start: 46,
+          end: 46,
+        },
+        {
+          type: TokenType.EQUAL,
+          line: 3,
+          lexeme: "=",
+          literal: null,
+          start: 48,
+          end: 48,
+        },
+        {
+          type: TokenType.NUMBER,
+          line: 3,
+          lexeme: "3",
+          literal: 3,
+          start: 50,
+          end: 50,
+        },
+        {
+          type: TokenType.SEMICOLON,
+          line: 3,
+          lexeme: ";",
+          literal: null,
+          start: 51,
+          end: 51,
+        },
+        {
+          type: TokenType.VAR,
+          line: 4,
+          lexeme: "var",
+          literal: null,
+          start: 53,
+          end: 55,
+        },
+        {
+          type: TokenType.IDENTIFIER,
+          line: 4,
+          lexeme: "tan",
+          literal: null,
+          start: 57,
+          end: 59,
+        },
+        {
+          type: TokenType.EQUAL,
+          line: 4,
+          lexeme: "=",
+          literal: null,
+          start: 61,
+          end: 61,
+        },
+        {
+          type: TokenType.NUMBER,
+          line: 4,
+          lexeme: "7",
+          literal: 7,
+          start: 63,
+          end: 63,
+        },
+        {
+          type: TokenType.SEMICOLON,
+          line: 4,
+          lexeme: ";",
+          literal: null,
+          start: 64,
+          end: 64,
+        },
+        {
+          type: TokenType.RIGHT_BRACE,
+          line: 5,
+          lexeme: "}",
+          literal: null,
+          start: 66,
+          end: 66,
+        },
+        {
+          type: TokenType.EOF,
+          line: 5,
+          lexeme: "",
+          literal: null,
+          start: 68,
+          end: 68,
+        },
+      ];
+      const ast = parser(tokens);
+
+      assertObjectMatch(
+        ast.root?.children[0].data as unknown as Tree<IProgram>,
+        {
+          type: "BlockStatement",
+          body: [
+            {
+              type: "AssignmentExpression",
+              operator: "=",
+              left: {
+                type: "MemberExpression",
+                object: {
+                  type: "CallExpression",
+                  callee: { type: "Identifier", name: "newPoint" },
+                  arguments: [
+                    { type: "Identifier", name: "x" },
+                    { type: "Literal", value: 2, raw: "2" },
+                    { type: "Literal", value: 0, raw: "0" },
+                  ],
+                },
+                property: { type: "Identifier", name: "y" },
+                computed: false,
+                optional: false,
+              },
+              right: { type: "Literal", value: 3, raw: "3" },
+            },
+            {
+              type: "VariableDeclaration",
+              declarations: [
+                {
+                  type: "VariableDeclarator",
+                  id: { type: "Identifier", name: "tan" },
+                  init: { type: "Literal", value: 7, raw: "7" },
+                },
+              ],
+            },
+          ],
+          sourceType: "module",
+        },
+      );
+    });
+  });
 });

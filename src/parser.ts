@@ -7,6 +7,7 @@ type LogicalOperator = "and" | "or";
 
 export enum ASTNodeType {
   Program = "Program",
+  BlockStatement = "BlockStatement",
   Literal = "Literal",
   VariableDeclaration = "VariableDeclaration",
   ExpressionStatement = "ExpressionStatement",
@@ -87,6 +88,11 @@ interface IExpressionStatement {
   expression: IExpression;
 }
 
+interface IBlock {
+  type: ASTNodeType.BlockStatement;
+  body: IDeclaratation[];
+  sourceType: "module";
+}
 type IExpression =
   | IAssignmentExpression
   | ILogicalExpression
@@ -97,10 +103,13 @@ type IExpression =
   | ILiteral
   | IIdentifier;
 
+type IStatement = IExpressionStatement | IBlock;
+
+type IDeclaratation = IVariableDeclaration | IStatement;
 export type ASTNode =
+  | IDeclaratation
   | IProgram
   | IDeclarator
-  | IVariableDeclaration
   | IExpressionStatement
   | IExpression;
 
@@ -134,7 +143,7 @@ export function parser(c: IToken[]): Tree<IProgram> {
 
   function consume(
     { startToken, endToken }: { startToken: TokenType; endToken: TokenType },
-  ): IExpression {
+  ): ASTNode[] {
     const codeSegment: IToken[] = [];
     let i = position + 1;
     let startTokenCount = 0;
@@ -166,7 +175,7 @@ export function parser(c: IToken[]): Tree<IProgram> {
     const tree = parser(codeSegment);
     const ast = convertTreeToASTTree(tree);
 
-    return ast.body[0] as IExpression;
+    return ast.body;
   }
 
   function evalLogical(
@@ -246,7 +255,23 @@ export function parser(c: IToken[]): Tree<IProgram> {
   }
 
   function evalStatement(): ASTNode | null {
+    if (match({ token: code[position], comparison: TokenType.LEFT_BRACE })) {
+      return evalBlock();
+    }
     return evalExpresion();
+  }
+
+  function evalBlock(): IBlock {
+    const block = consume({
+      startToken: TokenType.LEFT_BRACE,
+      endToken: TokenType.RIGHT_BRACE,
+    }) as IDeclaratation[];
+
+    return {
+      type: ASTNodeType.BlockStatement,
+      body: block,
+      sourceType: "module",
+    };
   }
 
   function evalExpresion(): IExpression | null {
@@ -484,10 +509,11 @@ export function parser(c: IToken[]): Tree<IProgram> {
     }
 
     if (match({ token, comparison: TokenType.LEFT_PAREN })) {
-      return consume({
+      const expression = consume({
         startToken: TokenType.LEFT_PAREN,
         endToken: TokenType.RIGHT_PAREN,
       });
+      return expression[0] as IExpression;
     }
 
     return null;

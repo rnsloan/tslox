@@ -77,4 +77,12 @@ var four = foo.bar.baz()
 
   const code10 = `newPoint(x + 2, 0).y = 3;`;
   await assertSnapshot(t, test(code10));
+
+  const code11 = `
+{
+  newPoint(x + 2, 0).y = 3;
+  var tan = 7;
+}
+`;
+  await assertSnapshot(t, test(code11));
 });

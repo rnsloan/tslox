@@ -23,7 +23,7 @@ const main = async () => {
   if (isDebugMode) {
     console.dir(ast.root, { depth: 50 });
     console.log("-------");
-  }  
+  }
   
   const js = interpreter(ast);
 

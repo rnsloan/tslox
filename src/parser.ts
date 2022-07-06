@@ -7,6 +7,7 @@ type LogicalOperator = "and" | "or";
 
 export enum ASTNodeType {
   Program = "Program",
+  PrintStatement = "PrintStatement",
   ReturnStatement = "ReturnStatement",
   WhileStatement = "WhileStatement",
   BlockStatement = "BlockStatement",
@@ -90,6 +91,11 @@ interface IExpressionStatement {
   expression: IExpression;
 }
 
+interface IPrintStatement {
+  type: ASTNodeType.PrintStatement;
+  argument: IExpression;
+}
+
 interface IReturnStatement {
   type: ASTNodeType.ReturnStatement;
   argument?: IExpression;
@@ -115,7 +121,12 @@ type IExpression =
   | ILiteral
   | IIdentifier;
 
-type IStatement = IExpression | IReturnStatement | IWhileStatement | IBlock;
+type IStatement =
+  | IExpression
+  | IPrintStatement
+  | IReturnStatement
+  | IWhileStatement
+  | IBlock;
 
 type IDeclaratation = IVariableDeclaration | IStatement;
 export type ASTNode =
@@ -267,9 +278,14 @@ export function parser(c: IToken[]): Tree<IProgram> {
   }
 
   function evalStatement(): IStatement | null {
+    if (match({ token: code[position], comparison: TokenType.PRINT })) {
+      return evalPrint();
+    }
+
     if (match({ token: code[position], comparison: TokenType.RETURN })) {
       return evalReturn();
     }
+
     if (match({ token: code[position], comparison: TokenType.WHILE })) {
       return evalWhile();
     }
@@ -279,6 +295,20 @@ export function parser(c: IToken[]): Tree<IProgram> {
     }
 
     return evalExpresion();
+  }
+
+  function evalPrint(): IPrintStatement | null {
+    advance();
+    const argument = evalExpresion();
+
+    if (!argument) {
+      return null;
+    }
+
+    return {
+      type: ASTNodeType.PrintStatement,
+      argument,
+    };
   }
 
   function evalReturn(): IReturnStatement {

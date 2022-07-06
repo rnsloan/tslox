@@ -99,4 +99,7 @@ while (foo < 4) {
 
   const code14 = `return foo < bar;`;
   await assertSnapshot(t, test(code14));
+
+  const code15 = `console.log("hello world")`;
+  await assertSnapshot(t, test(code15));
 });

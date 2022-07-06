@@ -20,6 +20,10 @@ function generateCode(node: ASTNode): string {
       }
       break;
     }
+    case ASTNodeType.PrintStatement: {
+      code = `console.log(${generateCode(node.argument)});`;
+      break;
+    }
     case ASTNodeType.ReturnStatement: {
       const argument = node.argument ? ` ${generateCode(node.argument)}` : "";
       code = `return${argument};`;

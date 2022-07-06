@@ -833,4 +833,51 @@ describe("Parser", () => {
       );
     });
   });
+
+  describe("Print Statement", () => {
+    it("should parse print statements", () => {
+      const tokens = [
+        {
+          type: TokenType.PRINT,
+          line: 2,
+          lexeme: "print",
+          literal: null,
+          start: 25,
+          end: 29,
+        },
+        {
+          type: TokenType.STRING,
+          line: 2,
+          lexeme: "hello world",
+          literal: null,
+          start: 32,
+          end: 42,
+        },
+        {
+          type: TokenType.SEMICOLON,
+          line: 2,
+          lexeme: ";",
+          literal: null,
+          start: 44,
+          end: 44,
+        },
+        {
+          type: TokenType.EOF,
+          line: 2,
+          lexeme: "",
+          literal: null,
+          start: 46,
+          end: 46,
+        },
+      ];
+      const ast = parser(tokens);
+      assertObjectMatch(
+        ast.root?.children[0].data as unknown as Tree<IProgram>,
+        {
+          type: "PrintStatement",
+          argument: { type: "Literal", value: null, raw: "hello world" },
+        },
+      );
+    });
+  });
 });

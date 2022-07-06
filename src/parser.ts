@@ -7,6 +7,7 @@ type LogicalOperator = "and" | "or";
 
 export enum ASTNodeType {
   Program = "Program",
+  IfStatement = "IfStatement",
   PrintStatement = "PrintStatement",
   ReturnStatement = "ReturnStatement",
   WhileStatement = "WhileStatement",
@@ -91,6 +92,12 @@ interface IExpressionStatement {
   expression: IExpression;
 }
 
+interface IIfStatement {
+  type: ASTNodeType.IfStatement;
+  test: IExpression;
+  consequent: IStatement;
+  sourceType: "module";
+}
 interface IPrintStatement {
   type: ASTNodeType.PrintStatement;
   argument: IExpression;
@@ -123,6 +130,7 @@ type IExpression =
 
 type IStatement =
   | IExpression
+  | IIfStatement
   | IPrintStatement
   | IReturnStatement
   | IWhileStatement
@@ -278,23 +286,49 @@ export function parser(c: IToken[]): Tree<IProgram> {
   }
 
   function evalStatement(): IStatement | null {
-    if (match({ token: code[position], comparison: TokenType.PRINT })) {
-      return evalPrint();
+    switch (code[position].type) {
+      case TokenType.IF: {
+        return evalIf();
+      }
+      case TokenType.PRINT: {
+        return evalPrint();
+      }
+      case TokenType.RETURN: {
+        return evalReturn();
+      }
+      case TokenType.WHILE: {
+        return evalWhile();
+      }
+      case TokenType.LEFT_BRACE: {
+        return evalBlock();
+      }
+      default: {
+        return evalExpresion();
+      }
+    }
+  }
+
+  function evalIf(): IIfStatement {
+    advance();
+    const test = consume({
+      startToken: TokenType.LEFT_PAREN,
+      endToken: TokenType.RIGHT_PAREN,
+    })[0] as IExpression;
+    const consequent = evalStatement();
+
+    if (!test || !consequent) {
+      const token = code[position];
+      throw new Error(
+        `Expected statement for if statement ${token.type} {${token.line}:${token.start}}`,
+      );
     }
 
-    if (match({ token: code[position], comparison: TokenType.RETURN })) {
-      return evalReturn();
-    }
-
-    if (match({ token: code[position], comparison: TokenType.WHILE })) {
-      return evalWhile();
-    }
-
-    if (match({ token: code[position], comparison: TokenType.LEFT_BRACE })) {
-      return evalBlock();
-    }
-
-    return evalExpresion();
+    return {
+      type: ASTNodeType.IfStatement,
+      test,
+      consequent,
+      sourceType: "module",
+    };
   }
 
   function evalPrint(): IPrintStatement | null {

@@ -74,3 +74,9 @@ snapshot[`Integration 13`] = `"while (i < 10) i + 1"`;
 snapshot[`Integration 14`] = `"return foo < bar;"`;
 
 snapshot[`Integration 15`] = `'console.log("hello world")'`;
+
+snapshot[`Integration 16`] = `
+'if (less == true) {
+  console.log("hello world")
+}'
+`;

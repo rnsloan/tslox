@@ -102,4 +102,10 @@ while (foo < 4) {
 
   const code15 = `console.log("hello world")`;
   await assertSnapshot(t, test(code15));
+
+  const code16 = `
+if (less == true) {
+  console.log('hello world');
+}`;
+  await assertSnapshot(t, test(code16));
 });

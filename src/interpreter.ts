@@ -20,6 +20,10 @@ function generateCode(node: ASTNode): string {
       }
       break;
     }
+    case ASTNodeType.IfStatement: {
+      code = `if (${generateCode(node.test)}) ${generateCode(node.consequent)}`
+      break;
+    }
     case ASTNodeType.PrintStatement: {
       code = `console.log(${generateCode(node.argument)});`;
       break;

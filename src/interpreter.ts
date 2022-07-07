@@ -20,8 +20,29 @@ function generateCode(node: ASTNode): string {
       }
       break;
     }
+    case ASTNodeType.ForStatement: {
+      let init = node.init ? generateCode(node.init) : "";
+      let test = node.test ? generateCode(node.test) : "";
+      const update = node.update ? generateCode(node.update) : "";
+      let statement = generateCode(node.body);
+
+      if (!update && !test) {
+        init = init.replace(";", "");
+      }
+
+      if (update) {
+        test = `${test};`;
+      }
+
+      if (node.body.type !== ASTNodeType.BlockStatement) {
+        statement = `${statement};`;
+      }
+
+      code = `for (${init}${test}${update}) ${statement}`;
+      break;
+    }
     case ASTNodeType.IfStatement: {
-      code = `if (${generateCode(node.test)}) ${generateCode(node.consequent)}`
+      code = `if (${generateCode(node.test)}) ${generateCode(node.consequent)}`;
       break;
     }
     case ASTNodeType.PrintStatement: {

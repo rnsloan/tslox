@@ -108,4 +108,33 @@ if (less == true) {
   console.log('hello world');
 }`;
   await assertSnapshot(t, test(code16));
+
+  const code17 = `
+for (var i = 10;i< 10;i = i+1) {
+  console.log(i)
+}
+
+for (var i = 10;i< 10;) {
+  console.log(i)
+}
+
+for (var i = 10;i< 10) {
+  console.log(i)
+}
+
+for (var i = 10;;) {
+  console.log(i)
+}
+
+for (var i = 10;) {
+  console.log(i)
+}
+
+for (var i = 10) {
+  console.log(i)
+}
+
+for (var i = 10;i< 10;i = i+1) console.log(i)
+`;
+  await assertSnapshot(t, test(code17));
 });

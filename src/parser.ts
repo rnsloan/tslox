@@ -7,6 +7,7 @@ type LogicalOperator = "and" | "or";
 
 export enum ASTNodeType {
   Program = "Program",
+  ForStatement = "ForStatement",
   IfStatement = "IfStatement",
   PrintStatement = "PrintStatement",
   ReturnStatement = "ReturnStatement",
@@ -92,6 +93,15 @@ interface IExpressionStatement {
   expression: IExpression;
 }
 
+interface IForStatement {
+  type: ASTNodeType.ForStatement;
+  init?: IDeclaratation | IExpression;
+  test?: IExpression;
+  update?: IExpression;
+  body: IStatement;
+  sourceType: "module";
+}
+
 interface IIfStatement {
   type: ASTNodeType.IfStatement;
   test: IExpression;
@@ -130,6 +140,7 @@ type IExpression =
 
 type IStatement =
   | IExpression
+  | IForStatement
   | IIfStatement
   | IPrintStatement
   | IReturnStatement
@@ -287,6 +298,9 @@ export function parser(c: IToken[]): Tree<IProgram> {
 
   function evalStatement(): IStatement | null {
     switch (code[position].type) {
+      case TokenType.FOR: {
+        return evalFor();
+      }
       case TokenType.IF: {
         return evalIf();
       }
@@ -306,6 +320,65 @@ export function parser(c: IToken[]): Tree<IProgram> {
         return evalExpresion();
       }
     }
+  }
+
+  function evalFor(): IForStatement {
+    advance(2);
+
+    let init, test, update;
+
+    if (match({ token: code[position], comparison: TokenType.SEMICOLON })) {
+      init = null;
+      advance();
+    } else if (match({ token: code[position], comparison: TokenType.VAR })) {
+      init = evalVariable();
+    } else {
+      init = evalExpresion();
+    }
+
+    if (!match({ token: code[position], comparison: TokenType.RIGHT_PAREN })) {
+      advance();
+
+      if (match({ token: code[position], comparison: TokenType.SEMICOLON })) {
+        test = null;
+        advance();
+      } else {
+        test = evalExpresion();
+      }
+
+      if (match({ token: code[position], comparison: TokenType.SEMICOLON })) {
+        advance();
+      }
+
+      if (match({ token: code[position], comparison: TokenType.RIGHT_PAREN })) {
+        update = null;
+      } else {
+        update = evalExpresion();
+      }
+    } else {
+      test = null;
+      update = null;
+    }
+
+    advance();
+
+    const statement = evalStatement();
+
+    if (!statement) {
+      const token = code[position];
+      throw new Error(
+        `Expected statement for for statement ${token.type} {${token.line}:${token.start}}`,
+      );
+    }
+
+    return {
+      type: ASTNodeType.ForStatement,
+      ...(init && { init }),
+      ...(test && { test }),
+      ...(update && { update }),
+      body: statement,
+      sourceType: "module",
+    };
   }
 
   function evalIf(): IIfStatement {
@@ -647,6 +720,51 @@ export function parser(c: IToken[]): Tree<IProgram> {
     return null;
   }
 
+  function evalVariable(): IVariableDeclaration {
+    let token = code[position];
+    const variableDeclaration: IVariableDeclaration = {
+      type: ASTNodeType.VariableDeclaration,
+      declarations: [],
+    };
+
+    token = advance();
+
+    if (!match({ token, comparison: TokenType.IDENTIFIER })) {
+      throw new Error(
+        `Identifier expected got ${token.type} {${token.line}:${token.start}}`,
+      );
+    }
+
+    const declarator: IDeclarator = {
+      type: ASTNodeType.VariableDeclarator,
+      id: {
+        type: ASTNodeType.Identifier,
+        name: token.lexeme,
+      },
+      init: {
+        type: ASTNodeType.Literal,
+        value: null,
+        raw: null,
+      },
+    };
+
+    if (match({ token: peek(), comparison: TokenType.EQUAL })) {
+      token = advance(2);
+      const val = evalExpresion();
+      if (val) {
+        declarator.init = val;
+      } else {
+        throw new Error(
+          `Unable to parse variable value {${token.line}:${token.start}}`,
+        );
+      }
+    }
+
+    variableDeclaration.declarations.push(declarator);
+
+    return variableDeclaration;
+  }
+
   function walk(): ASTNode | null {
     let token = code[position];
 
@@ -656,47 +774,7 @@ export function parser(c: IToken[]): Tree<IProgram> {
     }
 
     if (match({ token, comparison: TokenType.VAR })) {
-      const variableDeclaration: IVariableDeclaration = {
-        type: ASTNodeType.VariableDeclaration,
-        declarations: [],
-      };
-
-      token = advance();
-
-      if (!match({ token, comparison: TokenType.IDENTIFIER })) {
-        throw new Error(
-          `Identifier expected got ${token.type} {${token.line}:${token.start}}`,
-        );
-      }
-
-      const declarator: IDeclarator = {
-        type: ASTNodeType.VariableDeclarator,
-        id: {
-          type: ASTNodeType.Identifier,
-          name: token.lexeme,
-        },
-        init: {
-          type: ASTNodeType.Literal,
-          value: null,
-          raw: null,
-        },
-      };
-
-      if (match({ token: peek(), comparison: TokenType.EQUAL })) {
-        token = advance(2);
-        const val = evalExpresion();
-        if (val) {
-          declarator.init = val;
-        } else {
-          throw new Error(
-            `Unable to parse variable value {${token.line}:${token.start}}`,
-          );
-        }
-      }
-
-      variableDeclaration.declarations.push(declarator);
-
-      return variableDeclaration;
+      return evalVariable();
     }
 
     return evalStatement();

@@ -80,3 +80,25 @@ snapshot[`Integration 16`] = `
   console.log("hello world")
 }'
 `;
+
+snapshot[`Integration 17`] = `
+"for (var i = 10;i < 10;i = (i + 1)) {
+  console.log(i)
+}
+for (var i = 10;i < 10) {
+  console.log(i)
+}
+for (var i = 10;i < 10) {
+  console.log(i)
+}
+for (var i = 10) {
+  console.log(i)
+}
+for (var i = 10) {
+  console.log(i)
+}
+for (var i = 10) {
+  console.log(i)
+}
+for (var i = 10;i < 10;i = (i + 1)) console.log(i);"
+`;

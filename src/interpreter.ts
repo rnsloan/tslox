@@ -10,6 +10,14 @@ function generateCode(node: ASTNode): string {
       code = node.body.map((n) => generateCode(n)).join("\n");
       break;
     }
+    case ASTNodeType.FunctionDeclaration: {
+      const params = node.params.map((param) => generateCode(param));
+      code = `function ${generateCode(node.id)}(${params.join(", ")}) ${
+        generateCode(node.body)
+      });`;
+
+      break;
+    }
     case ASTNodeType.VariableDeclaration: {
       code = `var ${node.declarations[0].id.name} = ${
         generateCode(node.declarations[0].init)

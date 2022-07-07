@@ -14,6 +14,7 @@ export enum ASTNodeType {
   WhileStatement = "WhileStatement",
   BlockStatement = "BlockStatement",
   Literal = "Literal",
+  FunctionDeclaration = "FunctionDeclaration",
   VariableDeclaration = "VariableDeclaration",
   ExpressionStatement = "ExpressionStatement",
   VariableDeclarator = "VariableDeclarator",
@@ -83,6 +84,16 @@ interface IDeclarator {
   };
   init: ASTNode;
 }
+
+interface IFunctionDeclaration {
+  type: ASTNodeType.FunctionDeclaration;
+  id: IIdentifier;
+  expression: false;
+  generator: false;
+  async: false;
+  params: IIdentifier[];
+  body: IBlock;
+}
 interface IVariableDeclaration {
   type: ASTNodeType.VariableDeclaration;
   declarations: IDeclarator[];
@@ -147,7 +158,7 @@ type IStatement =
   | IWhileStatement
   | IBlock;
 
-type IDeclaratation = IVariableDeclaration | IStatement;
+type IDeclaratation = IFunctionDeclaration | IVariableDeclaration | IStatement;
 export type ASTNode =
   | IDeclaratation
   | IProgram
@@ -720,6 +731,50 @@ export function parser(c: IToken[]): Tree<IProgram> {
     return null;
   }
 
+  function evalFunction(): IFunctionDeclaration {
+    advance();
+    const id = evalPrimary();
+    const params: IIdentifier[] = [];
+
+    if (id?.type !== ASTNodeType.Identifier) {
+      const token = code[position];
+      throw new Error(
+        `Identifier expected got ${token.type} {${token.line}:${token.start}}`,
+      );
+    }
+
+    while (
+      !match({ token: code[position], comparison: TokenType.RIGHT_PAREN })
+    ) {
+      if (match({ token: code[position], comparison: TokenType.IDENTIFIER })) {
+        params.push(evalPrimary() as IIdentifier);
+      } else {
+        advance();
+      }
+    }
+
+    advance();
+
+    const body = evalBlock();
+
+    if (body.type !== ASTNodeType.BlockStatement) {
+      const token = code[position];
+      throw new Error(
+        `Block expected for function got ${token.type} {${token.line}:${token.start}}`,
+      );
+    }
+
+    return {
+      type: ASTNodeType.FunctionDeclaration,
+      id,
+      expression: false,
+      generator: false,
+      async: false,
+      params,
+      body,
+    };
+  }
+
   function evalVariable(): IVariableDeclaration {
     let token = code[position];
     const variableDeclaration: IVariableDeclaration = {
@@ -766,11 +821,15 @@ export function parser(c: IToken[]): Tree<IProgram> {
   }
 
   function walk(): ASTNode | null {
-    let token = code[position];
+    const token = code[position];
 
     if (match({ token, comparison: TokenType.SEMICOLON })) {
       advance();
       return null;
+    }
+
+    if (match({ token, comparison: TokenType.FUN })) {
+      return evalFunction();
     }
 
     if (match({ token, comparison: TokenType.VAR })) {

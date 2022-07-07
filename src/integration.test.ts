@@ -137,4 +137,10 @@ for (var i = 10) {
 for (var i = 10;i< 10;i = i+1) console.log(i)
 `;
   await assertSnapshot(t, test(code17));
+
+  const code18 = `
+fun hello(name) {
+	console.log(name);
+}`;
+  await assertSnapshot(t, test(code18));
 });

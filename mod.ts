@@ -33,8 +33,9 @@ const main = async () => {
 
   try {
     Function(js)();
-  } catch (_) {
+  } catch (e) {
     console.error("Error executing code");
+    console.error(e);
   }
 };
 

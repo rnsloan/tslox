@@ -1,8 +1,13 @@
 {
-    "tasks": {
-      "debug": "deno run --allow-read mod.ts --debug",
-      "exec": "deno run --allow-read mod.ts",
-      "test": "deno test --allow-read=./src/__snapshots__",
-      "update-snapshots": "deno test --allow-read --allow-write=./src/__snapshots__ -- --update"
-    }
+  "tasks": {
+    "compile": "deno task compile-win && deno task compile-linux && deno task compile-osx && deno task compile-osx-silicon",
+    "compile-win": "deno compile --output tslox.win --allow-read executable.ts --target x86_64-pc-windows-msvc",
+    "compile-linux": "deno compile --output tslox.linux --allow-read executable.ts --target x86_64-unknown-linux-gnu",
+    "compile-osx": "deno compile --output tslox.osx --allow-read executable.ts --target x86_64-apple-darwin",
+    "compile-osx-silicon": "deno compile --output tslox.silicon --allow-read executable.ts",
+    "debug": "deno run --allow-read mod.ts --debug",
+    "exec": "deno run --allow-read mod.ts",
+    "test": "deno test --allow-read=./src/__snapshots__",
+    "update-snapshots": "deno test --allow-read --allow-write=./src/__snapshots__ -- --update"
   }
+}

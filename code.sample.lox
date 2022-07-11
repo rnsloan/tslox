@@ -1,3 +1,7 @@
 // deno-lint-ignore-file
-var hello = 12.45;
-var world;
+fun helloWorld() {
+  var hello = "hello world!";
+  print hello;
+}
+
+helloWorld();

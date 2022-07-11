@@ -30,7 +30,7 @@ ${node.body.body.map((item) => generateCode(item)).join("\n")}
       const params = node.params.map((param) => generateCode(param));
       code = `function ${generateCode(node.id)}(${params.join(", ")}) ${
         generateCode(node.body)
-      });`;
+      };`;
 
       break;
     }
@@ -153,7 +153,7 @@ ${node.body.body.map((item) => generateCode(item)).join("\n")}
     }
   }
 
-  return code;
+  return code.replaceAll(/;{2,}/g, ";");
 }
 
 export function interpreter(ast: Tree<ASTNode>): string {

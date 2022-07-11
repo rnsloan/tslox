@@ -24,20 +24,18 @@ const main = async () => {
     console.dir(ast.root, { depth: 50 });
     console.log("-------");
   }
-  
+
   const js = interpreter(ast);
 
   if (isDebugMode) {
     console.log(js);
   }
 
-  /*
-try {
-  Function(js)();
-} catch (_) {
-  console.error("Error executing code");
-}
-  */
+  try {
+    Function(js)();
+  } catch (_) {
+    console.error("Error executing code");
+  }
 };
 
 main();

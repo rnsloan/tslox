@@ -143,4 +143,23 @@ fun hello(name) {
 	console.log(name);
 }`;
   await assertSnapshot(t, test(code18));
+
+  const code19 = `
+class Rectangle < Shape {
+  constructor(height, width) {
+    this.height = height;
+    this.width = width;
+  }  
+  calcArea() {
+    return this.height * this.width;
+  }
+}
+
+class Rectangle {  
+  calcArea() {
+    return this.height * this.width;
+  }
+}
+`;
+  await assertSnapshot(t, test(code19));
 });

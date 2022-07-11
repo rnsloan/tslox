@@ -14,6 +14,10 @@ export enum ASTNodeType {
   WhileStatement = "WhileStatement",
   BlockStatement = "BlockStatement",
   Literal = "Literal",
+  FunctionExpression = "FunctionExpression",
+  MethodDefinition = "MethodDefinition",
+  ClassBody = "ClassBody",
+  ClassDeclaration = "ClassDeclaration",
   FunctionDeclaration = "FunctionDeclaration",
   VariableDeclaration = "VariableDeclaration",
   ExpressionStatement = "ExpressionStatement",
@@ -29,6 +33,7 @@ export enum ASTNodeType {
 export interface IProgram {
   type: ASTNodeType.Program;
   body: ASTNode[];
+  sourceType: "module";
 }
 interface ILiteral {
   type: ASTNodeType.Literal;
@@ -83,6 +88,38 @@ interface IDeclarator {
     name: string | number;
   };
   init: ASTNode;
+}
+
+interface IAssignmentExpression
+  extends Omit<ILogicalExpression, "type" | "operator"> {
+  type: ASTNodeType.AssignmentExpression;
+  operator: "=";
+}
+
+interface IFunctionExpression
+  extends Omit<IFunctionDeclaration, "type" | "id"> {
+  type: ASTNodeType.FunctionExpression;
+}
+
+interface IClassDeclaration {
+  type: ASTNodeType.ClassDeclaration;
+  id: IIdentifier;
+  superclass?: IIdentifier;
+  body: IClassBody;
+  sourceType: "module";
+}
+interface IClassBody {
+  type: ASTNodeType.ClassBody;
+  body: IMethodDefinition[];
+}
+
+interface IMethodDefinition {
+  type: ASTNodeType.MethodDefinition;
+  key: IIdentifier;
+  value: IFunctionExpression;
+  kind: "constructor" | "method";
+  computed: boolean;
+  static: boolean;
 }
 
 interface IFunctionDeclaration {
@@ -158,7 +195,12 @@ type IStatement =
   | IWhileStatement
   | IBlock;
 
-type IDeclaratation = IFunctionDeclaration | IVariableDeclaration | IStatement;
+type IDeclaratation =
+  | IClassDeclaration
+  | IFunctionDeclaration
+  | IMethodDefinition
+  | IVariableDeclaration
+  | IStatement;
 export type ASTNode =
   | IDeclaratation
   | IProgram
@@ -182,7 +224,7 @@ function match(
 export function parser(c: IToken[]): Tree<IProgram> {
   const code = c;
   const tree = new Tree();
-  const root = tree.parse({ type: "Program" });
+  const root = tree.parse({ type: ASTNodeType.Program, sourceType: "module" });
   let position = 0;
 
   function advance(amount = 1): IToken {
@@ -576,8 +618,10 @@ export function parser(c: IToken[]): Tree<IProgram> {
     const response = evalCall();
 
     if (
-      (response?.type === ASTNodeType.Identifier ||
-        response?.type === ASTNodeType.CallExpression) &&
+      (response &&
+        [ASTNodeType.Identifier, ASTNodeType.CallExpression].includes(
+          response.type,
+        )) &&
       match({ token: code[position], comparison: TokenType.DOT })
     ) {
       const expressions: IExpression[] = [response];
@@ -706,7 +750,9 @@ export function parser(c: IToken[]): Tree<IProgram> {
         };
       }
 
-      if (match({ token, comparison: TokenType.IDENTIFIER })) {
+      if (
+        match({ token, comparison: [TokenType.IDENTIFIER, TokenType.THIS] })
+      ) {
         return {
           type: ASTNodeType.Identifier,
           name: token.lexeme as string,
@@ -731,8 +777,74 @@ export function parser(c: IToken[]): Tree<IProgram> {
     return null;
   }
 
-  function evalFunction(): IFunctionDeclaration {
+  function evalClass(): IClassDeclaration | null {
     advance();
+
+    const classId = evalPrimary();
+    const functions: IFunctionDeclaration[] = [];
+    let superclass;
+
+    if (classId?.type !== ASTNodeType.Identifier) {
+      const token = code[position];
+      throw new Error(
+        `Identifier expected got ${token.type} {${token.line}:${token.start}}`,
+      );
+    }
+
+    if (match({ token: code[position], comparison: TokenType.LESS })) {
+      advance();
+
+      const primary = evalPrimary();
+      if (primary?.type === ASTNodeType.Identifier) {
+        superclass = primary;
+      }
+    }
+
+    // skip '{'
+    advance();
+
+    while (
+      !match({ token: code[position], comparison: TokenType.RIGHT_BRACE })
+    ) {
+      functions.push(evalFunction());
+    }
+
+    // skip '}'
+    advance();
+
+    const body: IMethodDefinition[] = functions.map((func) => {
+      const { id, ...funcExpression } = func;
+
+      return {
+        type: ASTNodeType.MethodDefinition,
+        key: id,
+        kind: id.name === "constructor" ? "constructor" : "method",
+        computed: false,
+        static: false,
+        value: {
+          ...funcExpression,
+          type: ASTNodeType.FunctionExpression,
+        },
+      };
+    });
+
+    return {
+      type: ASTNodeType.ClassDeclaration,
+      id: classId,
+      ...(superclass && { superclass }),
+      body: {
+        type: ASTNodeType.ClassBody,
+        body,
+      },
+      sourceType: "module",
+    };
+  }
+
+  function evalFunction(): IFunctionDeclaration {
+    if (match({ token: code[position], comparison: TokenType.FUN })) {
+      advance();
+    }
+
     const id = evalPrimary();
     const params: IIdentifier[] = [];
 
@@ -826,6 +938,10 @@ export function parser(c: IToken[]): Tree<IProgram> {
     if (match({ token, comparison: TokenType.SEMICOLON })) {
       advance();
       return null;
+    }
+
+    if (match({ token, comparison: TokenType.CLASS })) {
+      return evalClass();
     }
 
     if (match({ token, comparison: TokenType.FUN })) {

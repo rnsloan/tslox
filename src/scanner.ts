@@ -165,7 +165,10 @@ export function scanner(input: string): IToken[] {
     let tokenType = TokenType.IDENTIFIER;
     let literal;
 
-    if (IDENTIFIERS[value]) {
+    if (
+      IDENTIFIERS[value] &&
+      Object.prototype.hasOwnProperty.call(IDENTIFIERS, value)
+    ) {
       tokenType = IDENTIFIERS[value];
     }
 

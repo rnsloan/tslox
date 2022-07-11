@@ -10,6 +10,22 @@ function generateCode(node: ASTNode): string {
       code = node.body.map((n) => generateCode(n)).join("\n");
       break;
     }
+    case ASTNodeType.ClassDeclaration: {
+      const superclass = node.superclass
+        ? ` < ${generateCode(node.superclass)}`
+        : "";
+      code = `class ${generateCode(node.id)}${superclass} {
+${node.body.body.map((item) => generateCode(item)).join("\n")}
+}`;
+      break;
+    }
+    case ASTNodeType.MethodDefinition: {
+      const params = node.value.params.map((param) => generateCode(param));
+      code = `${generateCode(node.key)}(${params}) ${
+        generateCode(node.value.body)
+      }`;
+      break;
+    }
     case ASTNodeType.FunctionDeclaration: {
       const params = node.params.map((param) => generateCode(param));
       code = `function ${generateCode(node.id)}(${params.join(", ")}) ${

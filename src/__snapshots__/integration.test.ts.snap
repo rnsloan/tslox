@@ -108,3 +108,19 @@ snapshot[`Integration 18`] = `
   console.log(name)
 });"
 `;
+
+snapshot[`Integration 19`] = `
+"class Rectangle < Shape {
+constructor(height,width) {
+  this.height = height;this.width = width
+}
+calcArea() {
+  return this.height * this.width;
+}
+}
+class Rectangle {
+calcArea() {
+  return this.height * this.width;
+}
+}"
+`;

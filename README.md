@@ -37,7 +37,7 @@ run `deno task exec` for the project root.
 Run `deno task compile` to output the executables.
 ### Specification
 
-The Abstract Syntax Tree format adheres the to the [Acorn](https://github.com/acornjs/acorn) / [https://github.com/estree/estree](ESTree Specification) with one extenstion. A `PrintStatement` node:
+The Abstract Syntax Tree format adheres the to the [Acorn](https://github.com/acornjs/acorn) / [ESTree Specification](https://github.com/estree/estree) with one extension. A `PrintStatement` node:
 
 ```
 interface PrintStatement {

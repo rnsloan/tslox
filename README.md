@@ -29,7 +29,7 @@ run `deno task exec` for the project root.
 
 ## Development
 
-[Deno](https://deno.land) version `1.23.2` or later is required.
+[Deno](https://deno.land) version `1.23` or later is required.
 
 - run `deno task debug` to see output at each stage
 - Deno debugger guide: [https://deno.land/manual/getting_started/debugging_your_code](https://deno.land/manual/getting_started/debugging_your_code)
